@@ -146,7 +146,7 @@
             <i data-lucide="x" width="32" height="32"></i>
         </button>
         <div class="w-full max-w-7xl aspect-video bg-black shadow-2xl relative border border-white/10 rounded-sm overflow-hidden" onclick="event.stopPropagation()">
-            <video id="main-video" src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" class="w-full h-full object-cover" controls></video>
+<video id="main-video" class="w-full h-full object-cover" controls playsinline preload="metadata"></video>
         </div>
     </div>
 
@@ -482,7 +482,7 @@
         ];
 
         const PROJECTS = [
-          { id: '01', client: 'Guess', title: 'Summer Campaign', type: 'Global TVC', year: '2024' },
+          { id: '01', client: 'Guess', title: 'Summer Campaign', type: 'Global TVC', year: '2024', video: './guess.mp4' },
           { id: '02', client: 'Lacoste', title: 'Court Legacy', type: 'Social Series', year: '2023' },
           { id: '03', client: 'Greenbull Group', title: 'Fintech Future', type: 'Brand Identity', year: '2024' },
           { id: '04', client: 'Al Pago', title: 'Luxury Estates', type: 'Drone / AI', year: '2023' },
@@ -520,6 +520,41 @@
             initProjectScroll();
             initConsultation();
         });
+// --- VIDEO MODAL HELPERS ---
+function openVideoModal(src) {
+  const modal = document.getElementById('video-modal');
+  const video = document.getElementById('main-video');
+
+  if (!modal || !video) return;
+
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+
+  video.src = src;
+  video.load();
+
+  modal.classList.remove('hidden');
+  void modal.offsetWidth;
+  modal.classList.remove('opacity-0');
+
+  video.play().catch(() => {});
+}
+
+function closeVideoModal() {
+  const modal = document.getElementById('video-modal');
+  const video = document.getElementById('main-video');
+
+  if (!modal || !video) return;
+
+  modal.classList.add('opacity-0');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    video.pause();
+    video.currentTime = 0;
+    video.removeAttribute('src');
+  }, 300);
+}
 
         // --- HERO LOGIC ---
         function initHero() {
