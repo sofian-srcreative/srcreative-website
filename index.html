@@ -569,6 +569,31 @@ function closeVideoModal() {
                 if(title) title.style.transform = `translate(${x * 10}px, ${y * 10}px)`;
                 if(card) card.style.transform = `translate(${x * -20}px, ${y * -20}px)`;
             });
+              // Video Modal (Hero card)
+  const cardEl = document.getElementById('hero-card');
+  const closeBtn = document.getElementById('close-video');
+  const modalEl = document.getElementById('video-modal');
+
+  // open on hero card click (only if hero card exists)
+  if (cardEl) {
+    cardEl.addEventListener('click', () => {
+      openVideoModal('guess.mp4'); // or './guess.mp4'
+    });
+  }
+
+  // close button
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeVideoModal();
+    });
+  }
+
+  // click backdrop to close
+  if (modalEl) {
+    modalEl.addEventListener('click', closeVideoModal);
+  }
+
 
             // Video Modal
             const card = document.getElementById('hero-card');
