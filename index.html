@@ -1,29 +1,16 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>shownright. Agency</title>
-    
-    <!-- Fonts -->
+    <title>shownright.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS (CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons (CDN) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Google GenAI (ES Module compatible) -->
-    <script type="importmap">
-    {
-      "imports": {
-        "@google/genai": "https://esm.run/@google/genai"
-      }
-    }
-    </script>
+    <!-- Babel Standalone for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
       tailwind.config = {
@@ -36,7 +23,6 @@
             },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
-              mono: ['monospace'], 
             },
             letterSpacing: {
               tighter: '-0.04em',
@@ -49,15 +35,21 @@
           }
         }
       }
+      
+      // Polyfill for process.env.API_KEY for GitHub Pages compatibility
+      // Note: For a real production app, use a backend proxy. For this demo, we leave it empty.
+      window.process = {
+        env: {
+          API_KEY: '' 
+        }
+      };
     </script>
-
     <style>
       body {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         background-color: #F4F4F4;
         color: #111111;
-        overflow-x: hidden;
       }
       .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -71,30 +63,7 @@
         color: white;
       }
 
-      /* Animations */
-      @keyframes marquee {
-        0% { transform: translateX(0%); }
-        100% { transform: translateX(-100%); }
-      }
-      @keyframes marquee2 {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(0%); }
-      }
-      @keyframes marquee-text {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
-      }
-
-      .animate-marquee { animation: marquee 40s linear infinite; }
-      .animate-marquee2 { animation: marquee2 40s linear infinite; }
-      .animate-marquee-text { animation: marquee-text 40s linear infinite; }
-
-      .hover-pause:hover .animate-marquee, 
-      .hover-pause:hover .animate-marquee2 {
-        animation-play-state: paused;
-      }
-
-      /* Glitch Effect */
+      /* Glitch Animation for Neural Suite */
       @keyframes glitch-anim {
         0% { transform: translate(0); }
         20% { transform: translate(-2px, 2px); }
@@ -108,7 +77,7 @@
         color: #DE352B;
       }
 
-      /* Scanlines */
+      /* Scanline Effect */
       .scanlines {
         background: linear-gradient(
           to bottom,
@@ -119,810 +88,778 @@
         );
         background-size: 100% 4px;
       }
-
-      /* Vertical Text */
+      .perspective-1000 {
+        perspective: 1000px;
+      }
       .writing-vertical {
         writing-mode: vertical-rl;
-        text-orientation: mixed;
-      }
-
-      /* Project Gallery Reveal */
-      .gallery-item-reveal {
-        opacity: 0;
-        transform: translateY(40px) scale(0.98);
-        transition: opacity 1s ease-out, transform 1s cubic-bezier(0.23, 1, 0.32, 1);
-      }
-      .gallery-item-wrapper.is-visible .gallery-item-reveal {
-        opacity: 1;
-        transform: translateY(0) scale(1);
       }
     </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+    "@google/genai": "https://esm.sh/@google/genai@0.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
 </head>
-<body>
+  <body>
+    <div id="root"></div>
 
-    <!-- VIDEO MODAL -->
-    <div id="video-modal" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 md:p-12 opacity-0 transition-opacity duration-300">
-        <button id="close-video" class="absolute top-6 right-6 text-white/60 hover:text-rec transition-colors z-50 p-2">
-            <i data-lucide="x" width="32" height="32"></i>
-        </button>
-        <div class="w-full max-w-7xl aspect-video bg-black shadow-2xl relative border border-white/10 rounded-sm overflow-hidden" onclick="event.stopPropagation()">
-<video id="main-video" class="w-full h-full object-cover" controls playsinline preload="metadata"></video>
-        </div>
-    </div>
+    <script type="text/babel" data-type="module">
+      import React, { useState, useEffect, useRef } from 'react';
+      import ReactDOM from 'react-dom/client';
+      import { ArrowDown, Play, Plus, X, MoveRight, Box, Activity, Globe, Zap, Shield, Cpu, Check, ArrowRight as ArrowRightIcon, Loader2, Sparkles, Terminal, ChevronRight, Aperture } from 'lucide-react';
+      import { GoogleGenAI, Type } from "@google/genai";
 
-    <!-- CONTACT MODAL -->
-    <div id="contact-modal" class="fixed inset-0 z-[100] hidden items-center justify-center px-4">
-        <div class="absolute inset-0 bg-carbon/90 backdrop-blur-md" id="contact-backdrop"></div>
-        <div class="relative w-full max-w-2xl bg-studio border border-carbon shadow-2xl p-8 md:p-16 overflow-y-auto max-h-[90vh] animate-in fade-in zoom-in-95 duration-300">
-            <button id="close-contact" class="absolute top-6 right-6 p-2 hover:bg-carbon/5 rounded-full transition-colors group">
-                <i data-lucide="x" class="text-carbon group-hover:text-rec transition-colors"></i>
-            </button>
-            <div class="mb-12">
-                <span class="font-mono text-xs text-rec uppercase tracking-widest mb-4 block">Communication Uplink</span>
-                <h2 class="text-4xl md:text-5xl font-black tracking-tighter text-carbon mb-4">JOIN US NOW.</h2>
-                <p className="text-zinc-500 text-lg leading-tight max-w-md">Enter your coordinates. We will assess your trajectory.</p>
+      // --- CONSTANTS & DATA ---
+      const PACKAGES = [
+        {
+          id: 'pkg-01',
+          title: 'Brand Takeover',
+          subtitle: 'Full-Scale Creative & Social Management',
+          description: 'A full reset of your brand’s visual presence and day-to-day content engine. We manage your brand from the ground up — creative direction, production, social strategy, and the full rollout. We rebuild how you look, how you sound, and how you show up online. From cover shoots and commercials to social media calendars and daily asset delivery, we run the entire pipeline. Your content becomes consistent, high-quality, and aligned with a clear identity that performs across every channel.',
+          features: [
+            'Brand System & Identity Development',
+            'Campaign Strategy & Creative Direction',
+            'Photography, Cover Shoots & Production Oversight',
+            'Styling & On-Set Art Direction',
+            'Commercial & Social Video Production',
+            'Social Media Management & Content Scheduling',
+            'Content Architecture & Rollout Planning',
+            'Post-Production: Editing, Color Grading, Sound Design'
+          ],
+          type: 'real',
+          priceRange: '$$$$'
+        },
+        {
+          id: 'pkg-02',
+          title: 'AI SYSTEMS TAKEOVER',
+          subtitle: 'AI-Driven Content & Workflow Integration',
+          description: 'We install a full AI stack into your brand’s creative and operational workflow. From automated content pipelines to custom brand-trained tools, we build systems that make your marketing faster, smarter, and more efficient — without replacing your identity or watering down your aesthetic. We curate, customise, and deploy AI tools that actually move the needle: content generation, asset optimisation, reporting, and internal workflow automation. Your team gets sharper. Your output gets faster. Your brand stays consistent.',
+          features: [
+            'AI Tool Curation & Integration',
+            'AI Brand Voice & Visual System Training',
+            'AI-Assisted Content Production (Photo, Video, Copy)',
+            'Automated Social Content Variations & Resize Pipelines',
+            'AI-Powered Reporting & Insights Dashboards',
+            'Workflow Automation for Internal Teams',
+            'Content Architecture & Distribution Strategy',
+            'Human-Led Quality Control & Creative Oversight'
+          ],
+          type: 'hybrid',
+          priceRange: '$$'
+        }
+      ];
+
+      // PROJECTS CONFIGURATION
+      const PROJECTS = [
+        { 
+          id: '01', 
+          client: 'GUESS', 
+          title: 'Exclusive Dinner', 
+          type: 'Global TVC', 
+          year: '2025',
+          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-red-suit-34448-large.mp4'
+        },
+        { 
+          id: '02', 
+          client: 'Lacoste', 
+          title: 'Court Legacy', 
+          type: 'Social Series', 
+          year: '2025',
+          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-playing-tennis-34351-large.mp4'
+        },
+        { 
+          id: '06', 
+          client: 'Mag10', 
+          title: 'Luxury Estates', 
+          type: 'Web Experience', 
+          year: '2025',
+          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-architectural-shot-of-a-modern-building-34460-large.mp4'
+        },
+        { 
+          id: '05', 
+          client: 'Fightzumi', 
+          title: 'Combat League', 
+          type: 'Event Coverage', 
+          year: '2024',
+          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-boxer-training-with-a-punching-bag-34453-large.mp4'
+        },
+        { 
+          id: '07', 
+          client: 'GUESS', 
+          title: 'Beach Takeover', 
+          type: 'Summer Campaign', 
+          year: '2024',
+          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-in-swimsuit-walking-on-the-beach-34451-large.mp4'
+        },
+        { 
+          id: '04', 
+          client: 'Al Pago', 
+          title: 'Luxury Estates', 
+          type: 'Drone / AI', 
+          year: '2023',
+          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-luxury-mansion-with-a-pool-34455-large.mp4'
+        },
+      ];
+
+      const CLIENTS = [
+        { id: 'guess', name: 'GUESS', icon: Box },
+        { id: 'lacoste', name: 'LACOSTE', icon: Activity },
+        { id: 'alpago', name: 'AL PAGO', icon: Globe },
+        { id: 'mag10', name: 'MAG10', icon: Zap },
+        { id: 'fightzumi', name: 'FIGHTZUMI', icon: Shield },
+        { id: 'neura', name: 'NEURA', icon: Cpu },
+      ];
+
+      // --- SERVICES ---
+      const generateBrandStrategy = async (formData) => {
+        const apiKey = process.env.API_KEY || '';
+        
+        // Graceful fallback for demo purposes if no key
+        if (!apiKey) {
+           console.warn("No API Key found in process.env.API_KEY");
+           await new Promise(r => setTimeout(r, 2000));
+           return {
+             recommendation: "System Offline",
+             strategy: "API Key required for real-time analysis. Please configure your environment.",
+             rationale: "Demo mode active."
+           };
+        }
+
+        const ai = new GoogleGenAI({ apiKey });
+
+        const prompt = `
+          You are the Creative Director of "shownright.", a high-end design agency.
+          We are synonymous with uncompromising excellence and visual fidelity.
+          We offer two packages:
+          1. "Analog Takeover" (High-budget, real footage, slow, premium).
+          2. "Neural Hybrid" (AI-integrated, fast, scalable, modern).
+
+          The client wants to UPGRADE their brand to the highest level.
+          Current Identity: ${formData.brandName}
+          Industry: ${formData.industry}
+          Elevation Objective: ${formData.goal}
+
+          Analyze their needs. Recommend ONE package that best serves this upgrade. Write a short, punchy strategy paragraph in our brand voice (minimalist, bold, confident, corporate-aesthetic).
+        `;
+
+        try {
+          const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  recommendation: { type: Type.STRING, description: "Either 'Analog Takeover' or 'Neural Hybrid'" },
+                  strategy: { type: Type.STRING, description: "A bold 2-sentence strategic direction for the upgrade." },
+                  rationale: { type: Type.STRING, description: "Why this package fits their goal." }
+                },
+                required: ["recommendation", "strategy", "rationale"]
+              }
+            }
+          });
+
+          const text = response.text;
+          if (!text) throw new Error("No response from AI");
+          return JSON.parse(text);
+        } catch (error) {
+          console.error("Gemini Error:", error);
+          return {
+            recommendation: "Consultation Required",
+            strategy: "We need to discuss this in person to ensure maximum quality.",
+            rationale: "Your requirements are bespoke and demand human oversight."
+          };
+        }
+      };
+
+      // --- COMPONENTS ---
+
+      // 1. Marquee
+      const Marquee = ({ text, repeat = 10, reverse = false }) => {
+        return (
+          <div className="relative flex overflow-x-hidden bg-carbon text-studio border-y border-carbon py-4 select-none">
+            <div className={`animate-marquee whitespace-nowrap flex gap-12 ${reverse ? 'flex-row-reverse' : ''}`}>
+              {Array.from({ length: repeat }).map((_, i) => (
+                <span key={i} className="text-xl md:text-2xl font-medium uppercase tracking-widest flex items-center gap-12">
+                  {text} <span className="w-2 h-2 bg-rec rounded-full inline-block"></span>
+                </span>
+              ))}
+              {Array.from({ length: repeat }).map((_, i) => (
+                <span key={`dup-${i}`} className="text-xl md:text-2xl font-medium uppercase tracking-widest flex items-center gap-12">
+                  {text} <span className="w-2 h-2 bg-rec rounded-full inline-block"></span>
+                </span>
+              ))}
             </div>
-            <form class="space-y-8" onsubmit="event.preventDefault(); document.getElementById('contact-modal').classList.remove('flex'); document.getElementById('contact-modal').classList.add('hidden');">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="group">
-                        <label class="block text-[10px] uppercase tracking-widest mb-2 text-zinc-400">Name</label>
-                        <input type="text" placeholder="Full Name" class="w-full bg-transparent border-b border-carbon/20 py-2 text-xl font-medium text-carbon focus:border-rec outline-none">
+             <style>{`
+              .animate-marquee {
+                animation: marquee 40s linear infinite;
+              }
+              @keyframes marquee {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+              }
+            `}</style>
+          </div>
+        );
+      };
+
+      // 2. Client Logos
+      const ClientLogos = () => {
+        return (
+          <div className="w-full py-16 border-b border-carbon/10 bg-studio relative overflow-hidden group">
+            <div className="container mx-auto px-6 mb-8 flex justify-between items-center relative z-10">
+              <div className="flex items-center gap-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rec"></span>
+                  <h2 className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-400">Trusted Partners & Collaborators</h2>
+              </div>
+              <div className="hidden md:block h-[1px] flex-grow mx-8 bg-carbon/5"></div>
+              <span className="font-mono text-[9px] text-zinc-300 uppercase hidden lg:block">System_Status: Stable</span>
+            </div>
+
+            <div className="relative flex overflow-hidden">
+              <div className="flex whitespace-nowrap animate-marquee-fast group-hover:[animation-play-state:paused] py-4">
+                {[...CLIENTS, ...CLIENTS, ...CLIENTS, ...CLIENTS].map((client, i) => {
+                  const Icon = client.icon;
+                  return (
+                    <div key={`${client.id}-${i}`} className="flex items-center gap-4 px-12 md:px-20 group/logo cursor-crosshair transition-all duration-300">
+                        <div className="text-carbon/20 group-hover/logo:text-rec transition-colors duration-500">
+                            <Icon size={20} strokeWidth={1.5} />
+                        </div>
+                        <span className="text-3xl md:text-4xl font-black tracking-tighter text-carbon/30 lowercase group-hover/logo:text-carbon transition-colors duration-500">
+                            {client.name}
+                        </span>
                     </div>
-                    <div class="group">
-                        <label class="block text-[10px] uppercase tracking-widest mb-2 text-zinc-400">Email</label>
-                        <input type="email" placeholder="Email Address" class="w-full bg-transparent border-b border-carbon/20 py-2 text-xl font-medium text-carbon focus:border-rec outline-none">
+                  );
+                })}
+              </div>
+              <div className="absolute top-0 flex whitespace-nowrap animate-marquee2-fast group-hover:[animation-play-state:paused] py-4" aria-hidden="true">
+                {[...CLIENTS, ...CLIENTS, ...CLIENTS, ...CLIENTS].map((client, i) => {
+                   const Icon = client.icon;
+                   return (
+                    <div key={`${client.id}-dup-${i}`} className="flex items-center gap-4 px-12 md:px-20 group/logo cursor-crosshair transition-all duration-300">
+                        <div className="text-carbon/20 group-hover/logo:text-rec transition-colors duration-500">
+                            <Icon size={20} strokeWidth={1.5} />
+                        </div>
+                        <span className="text-3xl md:text-4xl font-black tracking-tighter text-carbon/30 lowercase group-hover/logo:text-carbon transition-colors duration-500">
+                            {client.name}
+                        </span>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+            <style>{`
+              .animate-marquee-fast { animation: marquee-scroll 60s linear infinite; }
+              .animate-marquee2-fast { animation: marquee2-scroll 60s linear infinite; }
+              @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+              @keyframes marquee2-scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(0); } }
+            `}</style>
+          </div>
+        );
+      };
+
+      // 3. Project Gallery
+      const ProjectGallery = () => {
+        const scrollContainerRef = useRef(null);
+        const itemsRef = useRef([]);
+        const [skew, setSkew] = useState(0);
+        const lastScrollX = useRef(0);
+        const requestRef = useRef();
+
+        useEffect(() => {
+          const animate = () => {
+            if (scrollContainerRef.current) {
+              const currentScrollX = scrollContainerRef.current.scrollLeft;
+              const velocity = currentScrollX - lastScrollX.current;
+              const targetSkew = velocity * 0.1;
+              setSkew(prev => prev + (targetSkew - prev) * 0.1);
+              lastScrollX.current = currentScrollX;
+            }
+            requestRef.current = requestAnimationFrame(animate);
+          };
+          requestRef.current = requestAnimationFrame(animate);
+          return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
+        }, []);
+
+        useEffect(() => {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) entry.target.classList.add('is-visible');
+              });
+            },
+            { root: scrollContainerRef.current, threshold: 0.15, rootMargin: '0px 50px 0px 0px' }
+          );
+          itemsRef.current.forEach((item) => { if (item) observer.observe(item); });
+          return () => observer.disconnect();
+        }, []);
+
+        return (
+          <div className="w-full h-auto py-12 perspective-1000">
+              <style>{`
+                .gallery-item-reveal {
+                  opacity: 0;
+                  transform: translateY(40px) scale(0.98);
+                  transition: opacity 1s ease-out, transform 1s cubic-bezier(0.23, 1, 0.32, 1);
+                  will-change: opacity, transform;
+                }
+                .gallery-item-wrapper.is-visible .gallery-item-reveal {
+                  opacity: 1;
+                  transform: translateY(0) scale(1);
+                }
+              `}</style>
+              
+              <div 
+                  ref={scrollContainerRef}
+                  className="flex overflow-x-auto gap-8 pb-16 scrollbar-hide snap-x snap-mandatory px-4 md:px-0 group/list"
+                  style={{ scrollBehavior: 'auto' }}
+              >
+                  {PROJECTS.map((project, index) => (
+                      <div 
+                          key={project.id}
+                          ref={el => itemsRef.current[index] = el}
+                          className="gallery-item-wrapper min-w-[85vw] md:min-w-[600px] snap-center shrink-0 group/item cursor-pointer relative transition-all duration-500 hover:!opacity-100 group-hover/list:opacity-40"
+                          style={{ transform: `skewX(${-skew}deg)` }}
+                      >
+                          <div className="gallery-item-reveal h-full flex flex-col justify-between">
+                              <div className="w-full aspect-[16/9] bg-zinc-900 relative mb-8 overflow-hidden group/vid">
+                                  {project.videoUrl ? (
+                                      <video
+                                          src={project.videoUrl}
+                                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/item:scale-110 grayscale group-hover/item:grayscale-0 opacity-40 group-hover/item:opacity-100"
+                                          autoPlay
+                                          muted
+                                          loop
+                                          playsInline
+                                      />
+                                  ) : (
+                                      <div className="absolute inset-0 bg-zinc-800"></div>
+                                  )}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-60 group-hover/item:opacity-20 transition-opacity duration-700"></div>
+                                  <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                                      style={{ backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`, backgroundSize: '30px 30px' }}>
+                                  </div>
+                                  <div className="absolute top-0 left-0 p-6 w-full flex justify-between items-start z-10">
+                                      <span className="font-mono text-[9px] text-white/90 uppercase tracking-widest border border-white/40 px-3 py-1 bg-black/40 backdrop-blur-md">
+                                          {project.type}
+                                      </span>
+                                      <div className="flex flex-col items-end gap-1">
+                                          <div className="flex gap-1 items-center">
+                                              <div className="w-1.5 h-1.5 bg-rec rounded-full animate-pulse"></div>
+                                              <span className="font-mono text-[8px] text-white/50">LIVE_FEED</span>
+                                          </div>
+                                          <span className="font-mono text-[8px] text-white/30">ID: SR_{project.id}</span>
+                                      </div>
+                                  </div>
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+                                      <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter opacity-0 translate-y-8 group-hover/item:opacity-100 group-hover/item:translate-y-0 transition-all duration-500 ease-swiss text-center px-8">
+                                          {project.client}<br/>
+                                          <span className="text-xs font-mono text-rec tracking-[0.4em] mt-2 block opacity-0 group-hover/item:opacity-100 delay-100 transition-opacity uppercase">view_full_report</span>
+                                      </h2>
+                                  </div>
+                                  <div className="absolute inset-0 flex items-center justify-center group-hover/item:opacity-0 transition-opacity duration-500">
+                                      <div className="w-16 h-16 rounded-full border border-white/20 flex items-center justify-center backdrop-blur-sm">
+                                          <Plus className="text-white/40" size={20} />
+                                      </div>
+                                  </div>
+                              </div>
+                              <div className="flex justify-between items-end border-t border-carbon pt-6 group-hover/item:border-rec transition-colors duration-500">
+                                  <div>
+                                      <div className="flex items-center gap-3">
+                                          <span className="text-xs font-mono text-rec font-bold">0{index + 1}</span>
+                                          <h3 className="text-2xl font-bold tracking-tight text-carbon group-hover/item:text-rec transition-colors">{project.title}</h3>
+                                      </div>
+                                      <p className="text-[10px] font-mono text-zinc-400 mt-2 uppercase tracking-[0.2em] font-bold">
+                                          {project.client} // {project.year} // EST_PROD
+                                      </p>
+                                  </div>
+                                  <div className="hidden md:flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-carbon opacity-0 transform translate-x-[-20px] group-hover/item:translate-x-0 group-hover/item:opacity-100 transition-all duration-500">
+                                      <span className="mr-3">Full Case</span> <MoveRight size={16} className="text-rec" />
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+                  
+                  <div 
+                       ref={el => itemsRef.current[PROJECTS.length] = el}
+                       className="gallery-item-wrapper min-w-[300px] snap-center shrink-0 flex flex-col justify-center items-center group cursor-pointer border-l border-carbon/10 hover:bg-carbon hover:text-white transition-all duration-500"
+                       style={{ transform: `skewX(${-skew}deg)` }}
+                  >
+                      <div className="gallery-item-reveal text-center p-12">
+                           <span className="block text-4xl font-light mb-4 group-hover:translate-x-4 transition-transform duration-500">→</span>
+                           <span className="text-[10px] font-black uppercase tracking-widest block">Access<br/>Archive</span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        );
+      };
+
+      // 4. Hero
+      const Hero = () => {
+        const [offset, setOffset] = useState(0);
+        const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+        const [isVideoOpen, setIsVideoOpen] = useState(false);
+        const containerRef = useRef(null);
+
+        useEffect(() => {
+          const handleScroll = () => requestAnimationFrame(() => setOffset(window.scrollY));
+          const handleMouseMove = (e) => {
+            if (!containerRef.current) return;
+            const { innerWidth, innerHeight } = window;
+            requestAnimationFrame(() => {
+              setMousePos({ x: (e.clientX / innerWidth) * 2 - 1, y: (e.clientY / innerHeight) * 2 - 1 });
+            });
+          };
+          window.addEventListener('scroll', handleScroll);
+          window.addEventListener('mousemove', handleMouseMove);
+          return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('mousemove', handleMouseMove);
+          };
+        }, []);
+
+        return (
+          <div ref={containerRef} className="relative w-full h-screen bg-studio flex flex-col justify-between overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0 mix-blend-multiply" 
+                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+            </div>
+            <div className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.03]"
+              style={{ backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)`, backgroundSize: `100px 100px` }}></div>
+
+            <div className="w-full border-b border-carbon/10 p-6 flex justify-between items-start z-20 fixed top-0 left-0 right-0 mix-blend-multiply">
+              <div className="flex items-start">
+                  <h1 className="text-xl font-black tracking-tight text-carbon leading-none">Shownright.</h1>
+                  <span className="text-[10px] font-normal text-carbon leading-none ml-1 -mt-0.5">Creative</span>
+              </div>
+              <div className="text-[10px] font-mono hidden sm:flex flex-col items-end gap-1 opacity-60">
+                 <div className="flex gap-4 uppercase tracking-wider"><span>Dubai</span><span>London</span><span>Paris</span></div>
+                 <div className="flex items-center gap-2"><span>GLOBAL_SYSTEM_ONLINE</span><span className="w-1.5 h-1.5 rounded-full bg-rec animate-pulse"></span></div>
+              </div>
+            </div>
+
+            <div className="flex-grow flex items-center px-6 lg:px-12 pt-20 relative z-10">
+              <div className="max-w-[90vw] w-full mx-auto relative">
+                <div className="relative z-10" style={{ transform: `translate(${mousePos.x * 10}px, ${mousePos.y * 10}px)` }}>
+                  <h1 className="text-[11vw] leading-[0.8] font-black tracking-tighter text-carbon select-none lowercase">
+                    shown<br /><span className="flex items-start">right<span className="text-rec text-[11vw] leading-none -mt-4">.</span></span>
+                  </h1>
                 </div>
-                <button class="w-full bg-carbon text-white py-5 px-8 font-bold uppercase tracking-widest text-xs hover:bg-rec transition-colors flex justify-between items-center group mt-8">
-                    <span>Transmit Data</span>
-                    <i data-lucide="arrow-right" class="group-hover:translate-x-1 transition-transform"></i>
-                </button>
-            </form>
-        </div>
-    </div>
 
-    <!-- HERO SECTION -->
-    <div id="hero" class="relative w-full h-screen bg-studio flex flex-col justify-between overflow-hidden">
-        <!-- Noise & Grid -->
-        <div class="absolute inset-0 opacity-[0.03] pointer-events-none z-0 mix-blend-multiply" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')"></div>
-        <div class="absolute inset-0 w-full h-full pointer-events-none opacity-[0.03]" style="background-image: linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px); background-size: 100px 100px;"></div>
+                {/* Floating Asset Card */}
+                <div onClick={() => setIsVideoOpen(true)}
+                     className="hidden lg:block absolute top-[10%] right-[5%] w-[320px] z-20 transition-transform duration-700 ease-swiss cursor-pointer"
+                     style={{ transform: `translate(${mousePos.x * -20}px, ${mousePos.y * -20}px)` }}>
+                   <div className="w-full bg-studio border border-carbon shadow-2xl hover:scale-105 transition-transform duration-300">
+                      <div className="p-1.5 border-b border-carbon flex justify-between items-center bg-zinc-100">
+                          <div className="flex gap-1"><div className="w-2 h-2 rounded-full border border-carbon"></div><div className="w-2 h-2 rounded-full border border-carbon"></div></div>
+                          <span className="font-mono text-[9px] uppercase font-bold tracking-widest">SR_MASTER_REEL_V4</span>
+                      </div>
+                      <div className="w-full aspect-video bg-zinc-900 flex items-center justify-center relative overflow-hidden group">
+                          <video 
+                              src="https://assets.mixkit.co/videos/preview/mixkit-woman-with-red-neon-lights-22340-large.mp4"
+                              className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-700"
+                              autoPlay muted loop playsInline
+                          />
+                          <div className="absolute inset-0 bg-rec/10 mix-blend-overlay group-hover:opacity-0 transition-opacity"></div>
+                          <Play className="text-white w-10 h-10 relative z-10 opacity-60 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-xl" fill="currentColor" />
+                          <div className="absolute bottom-2 left-2 text-[9px] font-mono text-white/70 bg-black/40 px-1 py-0.5 backdrop-blur-sm">00:00:14:02 // LIVE</div>
+                      </div>
+                      <div className="p-4">
+                          <div className="flex justify-between items-end">
+                              <div><p className="text-[10px] font-black uppercase tracking-[0.2em]">Showreel 2025</p><p className="text-[9px] text-zinc-400 font-mono mt-1">DIRECTOR_CUT_APPROVED</p></div>
+                              <Plus size={14} className="text-rec" />
+                          </div>
+                      </div>
+                   </div>
+                </div>
 
-        <!-- Top Bar -->
-        <div class="w-full border-b border-carbon/10 p-6 flex justify-between items-start z-20 fixed top-0 left-0 right-0 mix-blend-multiply">
-            <div class="flex items-start">
-                <h1 class="text-xl font-black tracking-tight text-carbon leading-none">Shownright.</h1>
-                <span class="text-[10px] font-normal text-carbon leading-none ml-1 -mt-0.5">Creative</span>
+                <div className="mt-16 flex flex-col md:flex-row md:items-start justify-between border-t border-carbon pt-8">
+                  <p className="max-w-xl text-2xl lg:text-3xl font-medium tracking-tight leading-tight">Constructing visual identity systems for the algorithmic age.</p>
+                </div>
+              </div>
             </div>
-            <div class="text-[10px] font-mono hidden sm:flex flex-col items-end gap-1 opacity-60">
-               <div class="flex gap-4 uppercase tracking-wider">
-                   <span>Dubai</span>
-                   <span>London</span>
-                   <span>Paris</span>
+
+            <div className="w-full px-6 py-6 flex justify-between items-end z-10">
+              <div className="flex gap-8 items-center">
+                  <div className="w-8 h-8 rounded-full border border-carbon flex items-center justify-center animate-bounce"><ArrowDown size={14} /></div>
+                  <div className="text-[10px] font-mono uppercase opacity-50 tracking-[0.3em] hidden md:block">Scroll to explore</div>
+              </div>
+              <div className="text-[10px] uppercase font-mono tracking-widest text-right opacity-50">Est. 2024 // DUBAI HQ</div>
+            </div>
+
+            {isVideoOpen && (
+              <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-500" onClick={() => setIsVideoOpen(false)}>
+                <button onClick={(e) => { e.stopPropagation(); setIsVideoOpen(false); }} className="absolute top-6 right-6 text-white/40 hover:text-rec transition-all z-50 p-2 scale-150"><X size={32} /></button>
+                <div className="w-full max-w-7xl aspect-video bg-black shadow-2xl relative border border-white/10 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    <video src="https://assets.mixkit.co/videos/preview/mixkit-woman-with-red-neon-lights-22340-large.mp4" className="w-full h-full object-cover" controls autoPlay />
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      // 5. Sticky Section
+      const StickySection = ({ number, title, children, id, theme = 'light' }) => {
+        const isDark = theme === 'dark';
+        const bgClass = isDark ? 'bg-carbon text-studio' : 'bg-studio text-carbon';
+        const borderClass = isDark ? 'border-zinc-800' : 'border-carbon/10';
+        const textClass = isDark ? 'text-zinc-500' : 'text-zinc-400';
+
+        return (
+          <section id={id} className={`min-h-screen w-full relative border-t ${borderClass} ${bgClass}`}>
+            <div className="flex flex-col lg:flex-row min-h-screen">
+              <div className="lg:w-[300px] w-full p-6 lg:p-12 lg:sticky lg:top-0 lg:h-screen flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-inherit z-10 shrink-0">
+                <div>
+                  <span className={`font-mono text-xs uppercase tracking-widest block mb-4 ${textClass}`}>{number}</span>
+                  <h2 className="text-3xl lg:text-4xl font-bold tracking-tight">{title}</h2>
+                </div>
+              </div>
+              <div className="flex-grow w-full p-6 lg:p-24 relative">{children}</div>
+            </div>
+          </section>
+        );
+      };
+
+      // 6. Service Interactive
+      const InteractivePanel = ({ pkg, index, hoveredId, setHoveredId, onOpenContact }) => {
+        const [parallax, setParallax] = useState({ x: 0, y: 0 });
+        const cardRef = useRef(null);
+        const isAnalog = pkg.id === 'pkg-01';
+        const isHovered = hoveredId === pkg.id;
+
+        const handleMouseMove = (e) => {
+          if (!cardRef.current) return;
+          const rect = cardRef.current.getBoundingClientRect();
+          const x = (e.clientX - rect.left - rect.width / 2) / 25;
+          const y = (e.clientY - rect.top - rect.height / 2) / 25;
+          setParallax({ x, y });
+        };
+
+        const theme = isAnalog ? {
+          bg: 'bg-studio', text: 'text-carbon', accent: 'bg-carbon', border: 'border-carbon/10', icon: Aperture, subfont: 'font-sans', overlay: 'opacity-[0.05] mix-blend-multiply',
+          texture: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+        } : {
+          bg: 'bg-[#050505]', text: 'text-studio', accent: 'bg-rec', border: 'border-white/10', icon: Cpu, subfont: 'font-mono', overlay: 'opacity-[0.1] scanlines', texture: ''
+        };
+        const Icon = theme.icon;
+
+        const getFlexClass = () => { if (!hoveredId) return 'lg:flex-1'; return hoveredId === pkg.id ? 'lg:flex-[3]' : 'lg:flex-[1]'; };
+        const getOpacityClass = () => { if (!hoveredId) return 'opacity-100'; return hoveredId === pkg.id ? 'opacity-100' : 'lg:opacity-40'; };
+
+        return (
+          <div ref={cardRef} onMouseEnter={() => setHoveredId(pkg.id)} onMouseLeave={() => { setHoveredId(null); setParallax({ x: 0, y: 0 }); }} onMouseMove={handleMouseMove}
+            className={`relative transition-all duration-700 ease-swiss cursor-pointer overflow-hidden flex flex-col ${getFlexClass()} ${theme.bg} ${theme.text} border-b lg:border-b-0 lg:border-r ${theme.border} group`}>
+            <div className={`absolute inset-0 pointer-events-none z-0 ${theme.overlay}`} style={{ backgroundImage: theme.texture }}></div>
+            {isAnalog ? (
+               <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                   <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-carbon/5 rounded-full blur-[100px] transition-transform duration-100 ease-out" style={{ transform: `translate(calc(-50% + ${parallax.x * -1.5}px), calc(-50% + ${parallax.y * -1.5}px))` }} />
                </div>
-               <div class="flex items-center gap-2">
-                   <span>GLOBAL_SYSTEM_ONLINE</span>
-                   <span class="w-1.5 h-1.5 rounded-full bg-rec animate-pulse"></span>
+            ) : (
+               <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                   <div className="absolute inset-[-10%] opacity-[0.05] transition-transform duration-100 ease-out" style={{ backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`, backgroundSize: '40px 40px', transform: `translate(${parallax.x}px, ${parallax.y}px)` }}></div>
+                   <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-rec/10 rounded-full blur-[120px] transition-transform duration-100 ease-out mix-blend-screen" style={{ transform: `translate(calc(-50% + ${parallax.x * -2}px), calc(-50% + ${parallax.y * -2}px))` }} />
                </div>
+            )}
+            <div className={`absolute top-0 left-0 bottom-0 w-12 hidden lg:flex flex-col items-center justify-between py-6 z-20 transition-opacity duration-500 ${hoveredId && !isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                <span className="font-mono text-[9px] rotate-180 writing-vertical">0{index + 1}</span>
+                <span className={`font-bold text-xs uppercase rotate-180 writing-vertical tracking-widest ${!isAnalog ? 'font-mono' : ''}`}>{pkg.title}</span>
+                <Icon size={14} className={!isAnalog ? 'text-rec' : ''} />
             </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="flex-grow flex items-center px-6 lg:px-12 pt-20 relative z-10">
-            <div class="max-w-[90vw] w-full mx-auto relative">
-                <!-- Title -->
-                <div id="hero-title" class="relative z-10 transition-transform duration-75">
-                    <h1 class="text-[11vw] leading-[0.8] font-black tracking-tighter text-carbon select-none lowercase">
-                      shown<br />
-                      <span class="flex items-start">
-                        right
-                        <span class="text-rec text-[11vw] leading-none -mt-4">.</span>
-                      </span>
-                    </h1>
-                </div>
-
-                <!-- Floating Card -->
-                <div id="hero-card" class="hidden lg:block absolute top-[10%] right-[5%] w-[320px] z-20 transition-transform duration-700 ease-swiss cursor-pointer">
-                     <div class="w-full bg-studio border border-carbon shadow-xl hover:scale-105 transition-transform duration-300">
-                        <div class="p-1 border-b border-carbon flex justify-between items-center bg-zinc-100">
-                            <div class="flex gap-1">
-                                <div class="w-2 h-2 rounded-full border border-carbon"></div>
-                                <div class="w-2 h-2 rounded-full border border-carbon"></div>
-                            </div>
-                            <span class="font-mono text-[9px] uppercase">Reel_Prev_04.mp4</span>
-                        </div>
-                        <div class="w-full aspect-video bg-zinc-900 flex items-center justify-center relative overflow-hidden group">
-                            <i data-lucide="play" class="text-studio w-8 h-8 opacity-50 group-hover:opacity-100 transition-opacity duration-300 fill-white"></i>
-                            <div class="absolute bottom-2 left-2 text-[9px] font-mono text-zinc-500">00:00:14:02</div>
-                        </div>
-                        <div class="p-3">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <p class="text-xs font-bold uppercase">Showreel 2024</p>
-                                    <p class="text-[10px] text-zinc-500 font-mono">AGENCY_CUT_FINAL</p>
-                                </div>
-                                <i data-lucide="plus" class="text-rec" width="12"></i>
-                            </div>
-                        </div>
-                     </div>
-                </div>
-
-                <div class="mt-16 flex flex-col md:flex-row md:items-start justify-between border-t border-carbon pt-8">
-                    <p class="max-w-xl text-2xl lg:text-3xl font-medium tracking-tight leading-tight">
-                      Constructing visual identity systems for the algorithmic age.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="w-full px-6 py-6 flex justify-between items-end z-10">
-            <div class="flex gap-8 items-center">
-                <div class="w-8 h-8 rounded-full border border-carbon flex items-center justify-center animate-bounce">
-                    <i data-lucide="arrow-down" width="14"></i>
-                </div>
-                <div class="text-[10px] font-mono uppercase opacity-50 tracking-widest hidden md:block">Scroll to explore</div>
-            </div>
-            <div class="text-[10px] uppercase font-mono tracking-widest text-right opacity-50">Est. 2024</div>
-        </div>
-    </div>
-
-    <!-- CLIENT LOGOS -->
-    <div class="w-full py-24 border-b border-carbon/10 bg-studio relative overflow-hidden">
-        <div class="absolute inset-0 w-full h-full pointer-events-none opacity-[0.03]" style="background-image: linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px); background-size: 40px 40px;"></div>
-        
-        <div class="container mx-auto px-6 mb-12 flex justify-between items-end relative z-10">
-            <div>
-                <span class="text-[10px] font-mono uppercase tracking-widest text-rec block mb-2">Network Status: Online</span>
-                <h2 class="text-3xl font-bold tracking-tight">Trusted Partners</h2>
-            </div>
-            <div class="hidden md:flex gap-4 text-[10px] font-mono text-zinc-400">
-                 <span>// SCROLL_VELOCITY: CONSTANT</span>
-                 <span>// INTERACTION: ENABLED</span>
-            </div>
-        </div>
-
-        <div class="relative flex overflow-hidden group hover-pause">
-            <!-- Logos generated by JS below -->
-            <div id="logo-track-1" class="animate-marquee flex gap-6 px-3"></div>
-            <div id="logo-track-2" class="absolute top-0 animate-marquee2 flex gap-6 px-3" aria-hidden="true"></div>
-        </div>
-    </div>
-
-    <!-- MARQUEE -->
-    <div class="py-12">
-        <div class="relative flex overflow-x-hidden bg-carbon text-studio border-y border-carbon py-4 select-none">
-            <div class="animate-marquee-text whitespace-nowrap flex gap-12 flex-row-reverse" id="text-marquee">
-                <!-- Text Injected via JS -->
-            </div>
-        </div>
-    </div>
-
-    <!-- WORK SECTION (Sticky) -->
-    <section id="work" class="min-h-screen w-full relative border-t border-carbon/10 bg-studio text-carbon">
-        <div class="flex flex-col lg:flex-row min-h-screen">
-            <!-- Sidebar -->
-            <div class="lg:w-[300px] w-full p-6 lg:p-12 lg:sticky lg:top-0 lg:h-screen flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-inherit z-10 shrink-0 bg-studio">
-                <div>
-                    <span class="font-mono text-xs uppercase tracking-widest block mb-4 text-zinc-400">1.0</span>
-                    <h2 class="text-3xl lg:text-4xl font-bold tracking-tight">Work.</h2>
-                </div>
-            </div>
-            <!-- Content -->
-            <div class="flex-grow w-full p-6 lg:p-24 relative overflow-hidden">
-                <div class="-ml-6 lg:-ml-12 w-[calc(100%+3rem)] lg:w-[calc(100%+6rem)]">
-                    <div id="project-gallery" class="flex overflow-x-auto gap-8 pb-16 scrollbar-hide snap-x snap-mandatory px-4 md:px-0 group/list" style="scroll-behavior: auto;">
-                        <!-- Projects injected via JS -->
+            <div className={`relative z-10 flex flex-col h-full p-6 lg:p-8 transition-all duration-700 ${getOpacityClass()} ${hoveredId && !isHovered ? 'lg:translate-x-8' : 'lg:translate-x-0'}`}>
+                <div className="mb-auto" style={{ transform: `translate(${parallax.x * 0.5}px, ${parallax.y * 0.5}px)` }}>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-widest ${isAnalog ? 'bg-carbon text-white' : 'bg-rec text-white'}`}>0{index + 1}</span>
+                        {!isAnalog && <span className="w-1.5 h-1.5 rounded-full bg-rec animate-pulse"></span>}
                     </div>
+                    <h3 className={`text-2xl lg:text-4xl font-black uppercase leading-[0.9] mb-2 tracking-tighter ${!isAnalog ? 'hover-glitch' : ''}`}>{pkg.title}</h3>
+                    <p className={`text-base lg:text-lg opacity-80 ${theme.subfont}`}>{pkg.subtitle}</p>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SERVICES SECTION (Not Sticky per request) -->
-    <section id="services" class="min-h-screen w-full relative border-t border-carbon/10 bg-studio text-carbon">
-        <div class="flex flex-col lg:flex-row min-h-screen">
-            <!-- Sidebar (Relative, flows with content) -->
-            <div class="lg:w-[300px] w-full p-6 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-inherit z-10 shrink-0">
-                <div>
-                    <span class="font-mono text-xs uppercase tracking-widest block mb-4 text-zinc-400">2.0</span>
-                    <h2 class="text-3xl lg:text-4xl font-bold tracking-tight">Services.</h2>
-                </div>
-            </div>
-            <!-- Content -->
-            <div class="flex-grow w-full p-6 lg:p-24 relative">
-                <div class="w-full max-w-[1400px] mx-auto">
-                    <p class="text-2xl mb-12 lg:mb-24 font-light leading-tight max-w-2xl px-2">
-                        Two distinct pathways to visual dominance. <br/>Select your vector.
-                    </p>
-                    <div id="services-container" class="w-full flex flex-col lg:flex-row h-auto lg:min-h-[500px] border border-carbon/10 overflow-hidden">
-                        <!-- Service Panels injected via JS -->
+                <div className={`space-y-4 transition-all duration-700 delay-100 lg:opacity-0 lg:translate-y-8 ${!hoveredId ? 'lg:opacity-100 lg:translate-y-0' : ''} ${isHovered ? 'lg:!opacity-100 lg:!translate-y-0' : ''}`}>
+                    <div className={`w-8 h-0.5 ${theme.accent} mb-2`}></div>
+                    <p className="max-w-md text-sm leading-relaxed opacity-80">{pkg.description}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 py-4 border-t border-dashed border-current opacity-60">
+                         {pkg.features.map((f, i) => <div key={i} className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wide"><Plus size={8} /> {f}</div>)}
                     </div>
+                    <button onClick={(e) => { e.stopPropagation(); onOpenContact(); }} className={`group/btn flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest py-2 border-b border-current ${!isAnalog ? 'hover:text-rec hover:border-rec' : 'hover:opacity-50'} transition-all`}><span>Join Us Now</span><ArrowRightIcon size={12} className="transition-transform group-hover/btn:translate-x-2" /></button>
                 </div>
             </div>
-        </div>
-    </section>
+          </div>
+        );
+      };
 
-    <!-- CONSULTATION SECTION (Sticky Dark) -->
-    <section id="consult" class="min-h-screen w-full relative border-t border-zinc-800 bg-carbon text-studio">
-        <div class="flex flex-col lg:flex-row min-h-screen">
-             <!-- Sidebar -->
-             <div class="lg:w-[300px] w-full p-6 lg:p-12 lg:sticky lg:top-0 lg:h-screen flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-zinc-800 z-10 shrink-0 bg-carbon">
-                <div>
-                    <span class="font-mono text-xs uppercase tracking-widest block mb-4 text-zinc-500">3.0</span>
-                    <h2 class="text-3xl lg:text-4xl font-bold tracking-tight">Join Us.</h2>
-                </div>
-            </div>
-            <!-- Content -->
-            <div class="flex-grow w-full p-6 lg:p-24 relative">
-                 <div class="mb-24">
-                    <p class="text-xl text-zinc-500 max-w-3xl leading-relaxed">
-                        Elevate your brand infrastructure. Shownright is synonymous with uncompromising excellence. 
-                        Partner with us to architect the trajectory of your next visual era.
-                    </p>
-                 </div>
-                 
-                 <!-- Terminal -->
-                 <div class="w-full border border-zinc-800 bg-black text-zinc-300 p-1 lg:p-12">
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
-                        <div class="lg:col-span-5">
-                             <div class="flex items-center gap-3 mb-12 opacity-50">
-                                <i data-lucide="terminal" width="16"></i>
-                                <span class="font-mono text-[10px] uppercase tracking-widest">>_ SR_INTAKE_PROTOCOL</span>
-                             </div>
-                             <form id="consult-form" class="space-y-12">
-                                <div class="group">
-                                    <label class="block text-[10px] uppercase tracking-widest mb-4 text-zinc-500">Brand Identity</label>
-                                    <input required id="brandName" type="text" class="w-full bg-transparent border-b border-zinc-800 focus:border-rec outline-none py-2 text-2xl font-light text-white" placeholder="Name your brand…">
-                                </div>
-                                <div class="group">
-                                    <label class="block text-[10px] uppercase tracking-widest mb-4 text-zinc-500">Category</label>
-                                    <select required id="industry" class="w-full bg-transparent border-b border-zinc-800 focus:border-rec outline-none py-2 text-xl font-light text-white appearance-none cursor-pointer">
-                                        <option value="" disabled selected>Select sector…</option>
-                                        <option value="Tech">Technology</option>
-                                        <option value="Fashion">Fashion & Apparel</option>
-                                        <option value="Real Estate">Real Estate</option>
-                                        <option value="Finance">Finance</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="group">
-                                    <label class="block text-[10px] uppercase tracking-widest mb-4 text-zinc-500">Core Objective</label>
-                                    <textarea required id="goal" class="w-full bg-zinc-900/30 border border-zinc-800 focus:border-rec outline-none p-4 text-sm min-h-[120px] resize-none text-zinc-300 font-mono" placeholder="Describe the direction you want to strengthen…"></textarea>
-                                </div>
-                                <button type="submit" id="consult-btn" class="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-rec hover:text-white transition-all duration-300">BEGIN PROTOCOL</button>
-                             </form>
-                        </div>
-                        <div class="lg:col-span-7 border-l border-zinc-800 pl-0 lg:pl-12 min-h-[400px] flex flex-col relative" id="consult-output">
-                            <!-- Initial State -->
-                            <div class="flex-1 flex flex-col justify-center opacity-30" id="consult-empty">
-                                <div class="w-12 h-12 border border-zinc-700 mb-6 flex items-center justify-center">
-                                    <i data-lucide="sparkles" width="20"></i>
-                                </div>
-                                <p class="font-mono text-sm max-w-xs">Input required. Once received, SR will map your brand’s current position.</p>
-                            </div>
-                            <!-- Loading State (Hidden by default) -->
-                            <div class="flex-1 flex flex-col justify-center hidden" id="consult-loading">
-                                <div class="font-mono text-xs space-y-2 text-rec">
-                                   <p class="flex items-center gap-2"><i data-lucide="loader-2" class="animate-spin" width="12"></i> INITIALIZING CORE...</p>
-                                   <p class="opacity-75">PROCESSING_INPUT_VECTORS</p>
-                                   <p class="opacity-50">CALCULATING_ELEVATION_METRICS</p>
-                                </div>
-                            </div>
-                            <!-- Result State (Hidden by default) -->
-                            <div class="hidden animate-in fade-in duration-700 pt-8" id="consult-result">
-                                <div class="flex items-center gap-4 mb-12">
-                                    <div class="px-3 py-1 border border-rec text-rec text-[10px] font-mono uppercase tracking-widest">Recommended Path</div>
-                                    <h2 class="text-3xl font-bold text-white tracking-tight" id="res-rec"></h2>
-                                </div>
-                                <div class="space-y-12">
-                                    <div>
-                                        <span class="text-[10px] text-zinc-500 uppercase tracking-widest block mb-4">Strategic Directive</span>
-                                        <p class="text-xl font-light leading-relaxed text-zinc-100" id="res-strat"></p>
-                                    </div>
-                                    <div class="pt-8 border-t border-zinc-900">
-                                        <span class="text-[10px] text-zinc-500 uppercase tracking-widest block mb-4">Rationale</span>
-                                        <div class="flex gap-4">
-                                            <i data-lucide="chevron-right" class="text-rec shrink-0" width="16"></i>
-                                            <p class="text-sm text-zinc-400 leading-relaxed font-mono" id="res-rat"></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                 </div>
-            </div>
-        </div>
-    </section>
+      const ServiceInteractive = ({ onOpenContact }) => {
+        const [hoveredId, setHoveredId] = useState(null);
+        return (
+          <div className="w-full flex flex-col lg:flex-row h-auto lg:min-h-[500px] gap-0 lg:gap-0 border border-carbon/10 overflow-hidden">
+            {PACKAGES.map((pkg, index) => <InteractivePanel key={pkg.id} pkg={pkg} index={index} hoveredId={hoveredId} setHoveredId={setHoveredId} onOpenContact={onOpenContact} />)}
+          </div>
+        );
+      };
 
-    <!-- FOOTER -->
-    <footer class="bg-white text-carbon py-24 border-t border-zinc-200">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div class="col-span-1 md:col-span-2">
-                <h2 class="text-2xl font-bold tracking-tight mb-8 lowercase">shownright.</h2>
-                <div class="flex flex-col gap-2 text-zinc-500 text-sm">
-                    <p>© 2024 Shownright Agency.</p>
-                    <p>Dubai / London / Paris</p>
-                </div>
-            </div>
-            <div>
-                <h4 class="font-bold uppercase tracking-widest mb-6 text-xs">Social</h4>
-                <ul class="space-y-4 text-sm text-zinc-500">
-                    <li>Instagram</li>
-                    <li>Twitter / X</li>
-                    <li>LinkedIn</li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold uppercase tracking-widest mb-6 text-xs">Legal</h4>
-                <ul class="space-y-4 text-sm text-zinc-500">
-                    <li>Privacy Policy</li>
-                    <li>Terms of Engagement</li>
-                </ul>
-            </div>
-        </div>
-    </footer>
-
-    <!-- MAIN SCRIPT (Module for GenAI) -->
-    <script type="module">
-        import { GoogleGenAI } from "@google/genai";
+      // 7. Consultation
+      const Consultation = () => {
+        const [formData, setFormData] = useState({ brandName: '', industry: '', goal: '' });
+        const [loading, setLoading] = useState(false);
+        const [result, setResult] = useState(null);
+        const [typedStrategy, setTypedStrategy] = useState('');
         
-        // --- CONFIGURATION ---
-        // ⚠️ PUT YOUR GEMINI API KEY HERE FOR THE CONSULTATION FORM TO WORK ⚠️
-        const GEMINI_API_KEY = ''; 
-        
-        // --- DATA ---
-        const CLIENTS = [
-          { id: 'guess', name: 'GUESS', icon: 'box', type: 'Global TVC', year: '2024' },
-          { id: 'lacoste', name: 'LACOSTE', icon: 'activity', type: 'Social Series', year: '2023' },
-          { id: 'alpago', name: 'AL PAGO', icon: 'globe', type: 'Drone / AI', year: '2023' },
-          { id: 'mag10', name: 'MAG10', icon: 'zap', type: 'Web Experience', year: '2023' },
-          { id: 'fightzumi', name: 'FIGHTZUMI', icon: 'shield', type: 'Event Coverage', year: '2024' },
-          { id: 'greenbull', name: 'GREENBULL', icon: 'layers', type: 'Brand Identity', year: '2024' },
-          { id: 'neura', name: 'NEURA', icon: 'cpu', type: 'AI Integration', year: '2024' },
-        ];
-
-        const PROJECTS = [
-          { id: '01', client: 'Guess', title: 'Summer Campaign', type: 'Global TVC', year: '2024', video: './guess.mp4' },
-          { id: '02', client: 'Lacoste', title: 'Court Legacy', type: 'Social Series', year: '2023' },
-          { id: '03', client: 'Greenbull Group', title: 'Fintech Future', type: 'Brand Identity', year: '2024' },
-          { id: '04', client: 'Al Pago', title: 'Luxury Estates', type: 'Drone / AI', year: '2023' },
-          { id: '05', client: 'Fightzumi', title: 'Combat League', type: 'Event Coverage', year: '2024' },
-          { id: '06', client: 'Mag10', title: 'Editorial 2.0', type: 'Web Experience', year: '2023' },
-        ];
-
-        const PACKAGES = [
-          {
-            id: 'pkg-01',
-            title: 'Brand Takeover',
-            subtitle: 'Full-Scale Creative & Social Management',
-            description: 'A full reset of your brand’s visual presence. We manage your brand from the ground up — creative direction, production, social strategy, and the full rollout.',
-            features: ['Brand Identity', 'Campaign Strategy', 'Production', 'Social Management'],
-            type: 'real'
-          },
-          {
-            id: 'pkg-02',
-            title: 'AI SYSTEMS TAKEOVER',
-            subtitle: 'AI-Driven Content & Workflow Integration',
-            description: 'We install a full AI stack into your brand’s creative workflow. From automated content pipelines to custom brand-trained tools.',
-            features: ['AI Integration', 'Brand Training', 'Automated Content', 'Workflow Scaling'],
-            type: 'hybrid'
+        useEffect(() => {
+          if (result?.strategy) {
+              setTypedStrategy('');
+              let i = 0;
+              const interval = setInterval(() => {
+                  setTypedStrategy(result.strategy.slice(0, i + 1));
+                  i++;
+                  if (i > result.strategy.length) clearInterval(interval);
+              }, 20);
+              return () => clearInterval(interval);
           }
-        ];
+        }, [result]);
 
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            initHero();
-            renderClients();
-            renderMarqueeText();
-            renderProjects();
-            renderServices();
-            initProjectScroll();
-            initConsultation();
-        });
-// --- VIDEO MODAL HELPERS ---
-function openVideoModal(src) {
-  const modal = document.getElementById('video-modal');
-  const video = document.getElementById('main-video');
+        const handleSubmit = async (e) => {
+          e.preventDefault();
+          if (!formData.brandName || !formData.goal) return;
+          setLoading(true);
+          setResult(null); 
+          const response = await generateBrandStrategy(formData);
+          setResult(response);
+          setLoading(false);
+        };
 
-  if (!modal || !video) return;
-
-  video.pause();
-  video.removeAttribute('src');
-  video.load();
-
-  video.src = src;
-  video.load();
-
-  modal.classList.remove('hidden');
-  void modal.offsetWidth;
-  modal.classList.remove('opacity-0');
-
-  video.play().catch(() => {});
-}
-
-function closeVideoModal() {
-  const modal = document.getElementById('video-modal');
-  const video = document.getElementById('main-video');
-
-  if (!modal || !video) return;
-
-  modal.classList.add('opacity-0');
-  setTimeout(() => {
-    modal.classList.add('hidden');
-    video.pause();
-    video.currentTime = 0;
-    video.removeAttribute('src');
-  }, 300);
-}
-
-        // --- HERO LOGIC ---
-        function initHero() {
-            // Parallax
-            document.addEventListener('mousemove', (e) => {
-                const x = (e.clientX / window.innerWidth) * 2 - 1;
-                const y = (e.clientY / window.innerHeight) * 2 - 1;
-                
-                const title = document.getElementById('hero-title');
-                const card = document.getElementById('hero-card');
-
-                if(title) title.style.transform = `translate(${x * 10}px, ${y * 10}px)`;
-                if(card) card.style.transform = `translate(${x * -20}px, ${y * -20}px)`;
-            });
-              // Video Modal (Hero card)
-  const cardEl = document.getElementById('hero-card');
-  const closeBtn = document.getElementById('close-video');
-  const modalEl = document.getElementById('video-modal');
-
-  // open on hero card click (only if hero card exists)
-  if (cardEl) {
-    cardEl.addEventListener('click', () => {
-      openVideoModal('guess.mp4'); // or './guess.mp4'
-    });
-  }
-
-  // close button
-  if (closeBtn) {
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closeVideoModal();
-    });
-  }
-
-  // click backdrop to close
-  if (modalEl) {
-    modalEl.addEventListener('click', closeVideoModal);
-  }
-
-
-            // Video Modal
-            const card = document.getElementById('hero-card');
-            const modal = document.getElementById('video-modal');
-            const closeBtn = document.getElementById('close-video');
-            const video = document.getElementById('main-video');
-
-            card.addEventListener('click', () => {
-                modal.classList.remove('hidden');
-                // Force reflow
-                void modal.offsetWidth; 
-                modal.classList.remove('opacity-0');
-                video.play();
-            });
-
-            const closeModal = () => {
-                modal.classList.add('opacity-0');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    video.pause();
-                    video.currentTime = 0;
-                }, 300);
-            };
-
-            closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeModal(); });
-            modal.addEventListener('click', closeModal);
-        }
-
-        // --- CLIENT LOGOS RENDERING ---
-        function createClientCard(client) {
-            const div = document.createElement('div');
-            div.className = "relative w-[280px] h-[140px] bg-white border border-carbon/10 shrink-0 transition-all duration-300 cursor-pointer group overflow-hidden hover:border-carbon";
-            div.innerHTML = `
-                <div class="absolute inset-0 bg-carbon/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-swiss"></div>
-                <div class="relative h-full p-5 flex flex-col justify-between z-10">
-                    <div class="flex justify-between items-start">
-                        <div class="p-1.5 rounded-sm border border-carbon/10 bg-zinc-50 text-zinc-400 group-hover:text-carbon group-hover:border-carbon transition-colors">
-                            <i data-lucide="${client.icon}" width="14" height="14"></i>
-                        </div>
-                        <div class="flex flex-col items-end">
-                            <span class="text-[9px] font-mono text-zinc-400 uppercase tracking-widest">Year</span>
-                            <span class="text-[10px] font-bold font-mono text-carbon">${client.year}</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-black tracking-tight text-carbon group-hover:translate-x-1 transition-transform duration-300">${client.name}</h3>
-                        <div class="flex items-center gap-2 mt-1 group-hover:translate-x-1 transition-transform duration-300 delay-75">
-                            <span class="w-1 h-1 bg-rec rounded-full"></span>
-                            <p class="text-[10px] uppercase font-mono text-zinc-500">${client.type}</p>
-                        </div>
-                    </div>
-                    <div class="click-feedback absolute inset-0 bg-rec/10 hidden items-center justify-center animate-in fade-in duration-200 pointer-events-none">
-                        <span class="font-mono text-[10px] font-bold text-rec uppercase tracking-widest bg-white px-2 py-1 border border-rec">Accessing_Data...</span>
-                    </div>
+        return (
+          <div className="w-full border border-zinc-800 bg-black text-zinc-300 p-1 lg:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
+              <div className="lg:col-span-5 flex flex-col justify-between">
+                <div>
+                    <div className="flex items-center gap-3 mb-12 opacity-50"><Terminal size={16} /><span className="font-mono text-[10px] uppercase tracking-widest">{`>_ SR_INTAKE_PROTOCOL`}</span></div>
+                    <form onSubmit={handleSubmit} className="space-y-12">
+                      <div className="group">
+                        <label className="block text-[10px] uppercase tracking-widest mb-4 text-zinc-500">Brand Identity</label>
+                        <input type="text" value={formData.brandName} onChange={(e) => setFormData({...formData, brandName: e.target.value})} className="w-full bg-transparent border-b border-zinc-800 focus:border-rec outline-none py-2 text-2xl font-light text-white transition-colors font-sans placeholder-zinc-800" placeholder="Name your brand…" />
+                      </div>
+                      <div className="group">
+                        <label className="block text-[10px] uppercase tracking-widest mb-4 text-zinc-500">Category</label>
+                        <select value={formData.industry} onChange={(e) => setFormData({...formData, industry: e.target.value})} className="w-full bg-transparent border-b border-zinc-800 focus:border-rec outline-none py-2 text-xl font-light text-white appearance-none cursor-pointer hover:text-zinc-400 transition-colors">
+                          <option value="" disabled>Select sector…</option><option value="Tech">Technology</option><option value="Fashion">Fashion & Apparel</option><option value="Real Estate">Real Estate</option><option value="Finance">Finance</option><option value="Entertainment">Media</option><option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="group">
+                        <label className="block text-[10px] uppercase tracking-widest mb-4 text-zinc-500">Core Objective</label>
+                        <textarea value={formData.goal} onChange={(e) => setFormData({...formData, goal: e.target.value})} className="w-full bg-zinc-900/30 border border-zinc-800 focus:border-rec outline-none p-4 text-sm min-h-[120px] resize-none transition-colors text-zinc-300 font-mono" placeholder="Describe the direction you want to strengthen…" />
+                      </div>
+                      <button type="submit" disabled={loading} className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-rec hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                          {loading ? 'Analyzing Trajectory...' : 'BEGIN PROTOCOL'}
+                      </button>
+                    </form>
                 </div>
-            `;
-            
-            div.addEventListener('click', () => {
-                div.classList.add('border-rec', 'ring-1', 'ring-rec');
-                div.querySelector('.click-feedback').classList.remove('hidden');
-                div.querySelector('.click-feedback').classList.add('flex');
-                setTimeout(() => {
-                    div.classList.remove('border-rec', 'ring-1', 'ring-rec');
-                    div.querySelector('.click-feedback').classList.add('hidden');
-                    div.querySelector('.click-feedback').classList.remove('flex');
-                }, 1500);
-            });
-            return div;
-        }
+              </div>
+              <div className="lg:col-span-7 border-l border-zinc-800 pl-0 lg:pl-12 min-h-[400px] flex flex-col relative">
+                  {!result && !loading && (
+                      <div className="flex-1 flex flex-col justify-center opacity-30">
+                          <div className="w-12 h-12 border border-zinc-700 mb-6 flex items-center justify-center"><Sparkles size={20} /></div>
+                          <p className="font-mono text-sm max-w-xs">Input required. Once received, SR will map your brand’s current position and recommend an elevation route.</p>
+                      </div>
+                  )}
+                  {loading && (
+                      <div className="flex-1 flex flex-col justify-center">
+                         <div className="font-mono text-xs space-y-2 text-rec">
+                             <p className="flex items-center gap-2"><Loader2 className="animate-spin" size={12} /> INITIALIZING CORE...</p>
+                             <p className="opacity-75">PROCESSING_INPUT_VECTORS</p>
+                             <p className="opacity-50">CALCULATING_ELEVATION_METRICS</p>
+                         </div>
+                      </div>
+                  )}
+                  {result && !loading && (
+                      <div className="animate-in fade-in duration-700 pt-8">
+                          <div className="flex items-center gap-4 mb-12">
+                              <div className="px-3 py-1 border border-rec text-rec text-[10px] font-mono uppercase tracking-widest">Recommended Path</div>
+                              <h2 className="text-3xl font-bold text-white tracking-tight">{result.recommendation}</h2>
+                          </div>
+                          <div className="space-y-12">
+                              <div><span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-4">Strategic Directive</span><p className="text-xl font-light leading-relaxed text-zinc-100">{typedStrategy}</p></div>
+                              <div className="pt-8 border-t border-zinc-900"><span className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-4">Rationale</span><div className="flex gap-4"><ChevronRight className="text-rec shrink-0" size={16} /><p className="text-sm text-zinc-400 leading-relaxed font-mono">{result.rationale}</p></div></div>
+                          </div>
+                      </div>
+                  )}
+              </div>
+            </div>
+          </div>
+        );
+      };
 
-        function renderClients() {
-            const track1 = document.getElementById('logo-track-1');
-            const track2 = document.getElementById('logo-track-2');
-            const fullList = [...CLIENTS, ...CLIENTS, ...CLIENTS];
+      // 8. Contact Modal
+      const ContactModal = ({ isOpen, onClose }) => {
+        if (!isOpen) return null;
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-carbon/90 backdrop-blur-md transition-opacity duration-300" onClick={onClose}></div>
+            <div className="relative w-full max-w-2xl bg-studio border border-carbon shadow-2xl animate-in fade-in zoom-in-95 duration-300 p-8 md:p-16 overflow-y-auto max-h-[90vh]">
+              <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-carbon/5 rounded-full transition-colors group"><X className="text-carbon group-hover:text-rec transition-colors" size={24} /></button>
+              <div className="mb-12"><span className="font-mono text-xs text-rec uppercase tracking-widest mb-4 block">Communication Uplink</span><h2 className="text-4xl md:text-5xl font-black tracking-tighter text-carbon mb-4">JOIN US NOW.</h2><p className="text-zinc-500 text-lg leading-tight max-w-md">Enter your coordinates. We will assess your trajectory and respond within 24 hours.</p></div>
+              <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); onClose(); }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="group"><label className="block text-[10px] uppercase tracking-widest mb-2 text-zinc-400 group-focus-within:text-rec transition-colors">Name</label><input type="text" placeholder="Full Name" className="w-full bg-transparent border-b border-carbon/20 py-2 text-xl font-medium text-carbon focus:border-rec outline-none transition-colors placeholder:text-carbon/20" /></div>
+                      <div className="group"><label className="block text-[10px] uppercase tracking-widest mb-2 text-zinc-400 group-focus-within:text-rec transition-colors">Contact</label><input type="email" placeholder="Email Address" className="w-full bg-transparent border-b border-carbon/20 py-2 text-xl font-medium text-carbon focus:border-rec outline-none transition-colors placeholder:text-carbon/20" /></div>
+                  </div>
+                  <div className="group"><label className="block text-[10px] uppercase tracking-widest mb-2 text-zinc-400 group-focus-within:text-rec transition-colors">Interest Vector</label><select className="w-full bg-transparent border-b border-carbon/20 py-2 text-xl font-medium text-carbon focus:border-rec outline-none transition-colors appearance-none cursor-pointer"><option>Brand Takeover</option><option>Neural Suite</option><option>General Inquiry</option></select></div>
+                  <div className="group"><label className="block text-[10px] uppercase tracking-widest mb-2 text-zinc-400 group-focus-within:text-rec transition-colors">Briefing</label><textarea placeholder="Tell us about your brand..." className="w-full bg-transparent border-b border-carbon/20 py-2 text-xl font-medium text-carbon focus:border-rec outline-none transition-colors resize-none min-h-[100px] placeholder:text-carbon/20"></textarea></div>
+                  <button className="w-full bg-carbon text-white py-5 px-8 font-bold uppercase tracking-widest text-xs hover:bg-rec transition-colors flex justify-between items-center group mt-8"><span>Transmit Data</span><ArrowRightIcon size={16} className="group-hover:translate-x-1 transition-transform" /></button>
+              </form>
+            </div>
+          </div>
+        );
+      };
 
-            fullList.forEach(c => {
-                track1.appendChild(createClientCard(c));
-                track2.appendChild(createClientCard(c));
-            });
-            lucide.createIcons();
-        }
+      // --- APP ---
+      const App = () => {
+        const [isContactOpen, setIsContactOpen] = useState(false);
+        return (
+          <div className="w-full min-h-screen bg-studio text-carbon font-sans selection:bg-rec selection:text-white overflow-x-hidden">
+            <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+            <Hero />
+            <ClientLogos />
+            <div className="py-12"><Marquee text="SELECTED WORKS / RECENT / ARCHIVE /" repeat={5} reverse={true} /></div>
+            <StickySection id="work" number="1.0" title="Work.">
+                <div className="-ml-6 lg:-ml-12 w-[calc(100%+3rem)] lg:w-[calc(100%+6rem)]"><ProjectGallery /></div>
+            </StickySection>
+            <StickySection id="services" number="2.0" title="Services.">
+              <div className="w-full max-w-[1400px] mx-auto">
+                   <p className="text-2xl mb-12 lg:mb-24 font-light leading-tight max-w-2xl px-2">Two distinct pathways to visual dominance. <br/>Select your vector.</p>
+                  <ServiceInteractive onOpenContact={() => setIsContactOpen(true)} />
+              </div>
+            </StickySection>
+            <StickySection id="consult" number="3.0" title="Join Us." theme="dark">
+               <div className="mb-24"><p className="text-xl text-zinc-500 max-w-3xl leading-relaxed">Elevate your brand infrastructure. Shownright is synonymous with uncompromising excellence. Partner with us to architect the trajectory of your next visual era.</p></div>
+               <Consultation />
+            </StickySection>
+            <footer className="bg-white text-carbon py-24 border-t border-zinc-200">
+              <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
+                  <div className="col-span-1 md:col-span-2">
+                      <h2 className="text-2xl font-bold tracking-tight mb-8 lowercase">shownright.</h2>
+                      <div className="flex flex-col gap-2 text-zinc-500 text-sm"><p>© 2024 Shownright Agency.</p><p>Dubai / London / Paris</p></div>
+                  </div>
+                  <div><h4 className="font-bold uppercase tracking-widest mb-6 text-xs">Social</h4><ul className="space-y-4 text-sm text-zinc-500"><li className="hover:text-rec cursor-pointer transition-colors">Instagram</li><li className="hover:text-rec cursor-pointer transition-colors">Twitter / X</li><li className="hover:text-rec cursor-pointer transition-colors">LinkedIn</li></ul></div>
+                  <div><h4 className="font-bold uppercase tracking-widest mb-6 text-xs">Legal</h4><ul className="space-y-4 text-sm text-zinc-500"><li className="hover:text-rec cursor-pointer transition-colors">Privacy Policy</li><li className="hover:text-rec cursor-pointer transition-colors">Terms of Engagement</li></ul></div>
+              </div>
+            </footer>
+          </div>
+        );
+      };
 
-        // --- MARQUEE TEXT ---
-        function renderMarqueeText() {
-            const container = document.getElementById('text-marquee');
-            const text = "SELECTED WORKS / RECENT / ARCHIVE /";
-            let html = '';
-            for(let i=0; i<10; i++) {
-                html += `
-                <span class="text-xl md:text-2xl font-medium uppercase tracking-widest flex items-center gap-12">
-                    ${text} <span class="w-2 h-2 bg-rec rounded-full inline-block"></span>
-                </span>`;
-            }
-            container.innerHTML = html;
-        }
-
-        // --- PROJECT GALLERY ---
-        function renderProjects() {
-            const container = document.getElementById('project-gallery');
-            PROJECTS.forEach((p, index) => {
-                const el = document.createElement('div');
-                el.className = "gallery-item-wrapper min-w-[85vw] md:min-w-[600px] snap-center shrink-0 group/item cursor-pointer relative transition-all duration-500 hover:!opacity-100 group-hover/list:opacity-40";
-                el.innerHTML = `
-                    <div class="gallery-item-reveal h-full flex flex-col justify-between">
-                        <div class="w-full aspect-[16/9] bg-zinc-900 relative mb-8 overflow-hidden">
-                            <div class="absolute inset-0 bg-zinc-800 transition-transform duration-700 group-hover/item:scale-105">
-                                <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000); background-size: 20px 20px;"></div>
-                            </div>
-                            <div class="absolute top-0 left-0 p-6 w-full flex justify-between items-start z-10">
-                                <span class="font-mono text-[9px] text-white/60 uppercase tracking-widest border border-white/20 px-2 py-1 bg-black/50 backdrop-blur-sm">${p.type}</span>
-                                <div class="flex gap-1"><div class="w-1.5 h-1.5 bg-rec rounded-full animate-pulse"></div><div class="w-1.5 h-1.5 bg-white/20 rounded-full"></div></div>
-                            </div>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
-                                <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter opacity-0 translate-y-8 group-hover/item:opacity-100 group-hover/item:translate-y-0 transition-all duration-500 ease-swiss">${p.client}</h2>
-                            </div>
-                            <div class="absolute inset-0 flex items-center justify-center group-hover/item:opacity-0 transition-opacity duration-500">
-                                <div class="w-24 h-24 rounded-full border border-white/20 flex items-center justify-center">
-                                    <i data-lucide="plus" class="text-white/40"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-end border-t border-carbon pt-4 group-hover/item:border-rec transition-colors duration-500">
-                            <div>
-                                <div class="flex items-center gap-3"><span class="text-xs font-mono text-rec">0${index+1}</span><h3 class="text-2xl font-bold tracking-tight text-carbon group-hover/item:text-rec transition-colors">${p.title}</h3></div>
-                                <p class="text-xs font-mono text-zinc-400 mt-2 uppercase tracking-widest">Client: ${p.client} — ${p.year}</p>
-                            </div>
-                            <div class="hidden md:flex items-center text-xs font-bold uppercase tracking-widest text-carbon opacity-0 transform translate-x-[-20px] group-hover/item:translate-x-0 group-hover/item:opacity-100 transition-all duration-500">View Case Study <i data-lucide="arrow-right" class="ml-2 text-rec" width="14"></i></div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(el);
-            });
-            // Add archive link
-            const archive = document.createElement('div');
-            archive.className = "gallery-item-wrapper min-w-[400px] snap-center shrink-0 flex flex-col justify-center items-center group cursor-pointer border-l border-carbon/10 hover:bg-carbon hover:text-white transition-colors duration-500";
-            archive.innerHTML = `<div class="gallery-item-reveal text-center p-12"><span class="block text-6xl font-light mb-6 group-hover:translate-x-4 transition-transform duration-500">→</span><span class="text-sm font-bold uppercase tracking-widest">Access Archive</span></div>`;
-            container.appendChild(archive);
-        }
-
-        function initProjectScroll() {
-            const container = document.getElementById('project-gallery');
-            let lastScrollX = 0;
-            let currentSkew = 0;
-            const items = document.querySelectorAll('.gallery-item-wrapper');
-
-            // Skew Animation Loop
-            function animate() {
-                const currentScrollX = container.scrollLeft;
-                const velocity = currentScrollX - lastScrollX;
-                const targetSkew = velocity * 0.1;
-                
-                currentSkew = currentSkew + (targetSkew - currentSkew) * 0.1;
-                
-                items.forEach(item => {
-                    item.style.transform = `skewX(${-currentSkew}deg)`;
-                });
-
-                lastScrollX = currentScrollX;
-                requestAnimationFrame(animate);
-            }
-            requestAnimationFrame(animate);
-
-            // Observer for Reveal
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                    }
-                });
-            }, { root: container, threshold: 0.15 });
-
-            items.forEach(item => observer.observe(item));
-        }
-
-        // --- SERVICES INTERACTIVE ---
-        function renderServices() {
-            const container = document.getElementById('services-container');
-            const openContact = () => {
-                document.getElementById('contact-modal').classList.remove('hidden');
-                document.getElementById('contact-modal').classList.add('flex');
-            }
-
-            PACKAGES.forEach((pkg, idx) => {
-                const isAnalog = pkg.type === 'real';
-                const theme = isAnalog ? {
-                    bg: 'bg-studio', text: 'text-carbon', accent: 'bg-carbon', icon: 'aperture', subfont: 'font-sans', overlay: 'opacity-[0.05] mix-blend-multiply'
-                } : {
-                    bg: 'bg-[#050505]', text: 'text-studio', accent: 'bg-rec', icon: 'cpu', subfont: 'font-mono', overlay: 'opacity-[0.1] scanlines'
-                };
-
-                const el = document.createElement('div');
-                el.className = `service-panel relative transition-all duration-700 ease-swiss cursor-pointer overflow-hidden flex flex-col lg:flex-1 ${theme.bg} ${theme.text} border-b lg:border-b-0 lg:border-r border-carbon/10 group`;
-                
-                el.innerHTML = `
-                   <div class="absolute inset-0 pointer-events-none z-0 ${theme.overlay}"></div>
-                   <!-- Vertical Label -->
-                   <div class="vertical-label absolute top-0 left-0 bottom-0 w-12 hidden lg:flex flex-col items-center justify-between py-6 z-20 transition-opacity duration-500 opacity-0">
-                      <span class="font-mono text-[9px] rotate-180 writing-vertical">0${idx+1}</span>
-                      <span class="font-bold text-xs uppercase rotate-180 writing-vertical tracking-widest">${pkg.title}</span>
-                      <i data-lucide="${theme.icon}" width="14" class="${!isAnalog ? 'text-rec' : ''}"></i>
-                   </div>
-                   <!-- Content -->
-                   <div class="content-wrap relative z-10 flex flex-col h-full p-6 lg:p-8 transition-all duration-700">
-                        <div class="mb-auto">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-widest ${isAnalog ? 'bg-carbon text-white' : 'bg-rec text-white'}">0${idx+1}</span>
-                            </div>
-                            <h3 class="text-2xl lg:text-4xl font-black uppercase leading-[0.9] mb-2 tracking-tighter hover-glitch">${pkg.title}</h3>
-                            <p class="text-base lg:text-lg opacity-80 ${theme.subfont}">${pkg.subtitle}</p>
-                        </div>
-                        <div class="details space-y-4 transition-all duration-700 delay-100 lg:opacity-0 lg:translate-y-8">
-                             <div class="w-8 h-0.5 ${theme.accent} mb-2"></div>
-                             <p class="max-w-md text-sm leading-relaxed opacity-80">${pkg.description}</p>
-                             <button class="contact-btn flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest py-2 border-b border-current hover:opacity-50 transition-all">
-                                <span>Join Us Now</span> <i data-lucide="arrow-right" width="12"></i>
-                             </button>
-                        </div>
-                   </div>
-                `;
-
-                // Events
-                el.addEventListener('mouseenter', () => {
-                    document.querySelectorAll('.service-panel').forEach(p => {
-                        if(p === el) {
-                            p.classList.remove('lg:flex-1');
-                            p.classList.add('lg:flex-[3]');
-                            p.querySelector('.content-wrap').classList.remove('lg:opacity-40', 'lg:translate-x-8');
-                            p.querySelector('.details').classList.remove('lg:opacity-0', 'lg:translate-y-8');
-                            p.querySelector('.vertical-label').classList.add('opacity-0');
-                        } else {
-                            p.classList.remove('lg:flex-[3]');
-                            p.classList.add('lg:flex-1');
-                            p.querySelector('.content-wrap').classList.add('lg:opacity-40', 'lg:translate-x-8');
-                            p.querySelector('.details').classList.add('lg:opacity-0', 'lg:translate-y-8');
-                            p.querySelector('.vertical-label').classList.remove('opacity-0');
-                        }
-                    });
-                });
-
-                el.querySelector('.contact-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openContact();
-                });
-
-                container.appendChild(el);
-            });
-            
-            // Reset on container leave
-            container.addEventListener('mouseleave', () => {
-                document.querySelectorAll('.service-panel').forEach(p => {
-                    p.classList.remove('lg:flex-[3]');
-                    p.classList.add('lg:flex-1');
-                    p.querySelector('.content-wrap').classList.remove('lg:opacity-40', 'lg:translate-x-8');
-                    p.querySelector('.details').classList.remove('lg:opacity-100', 'lg:translate-y-0'); // reset
-                    p.querySelector('.details').classList.add('lg:opacity-0', 'lg:translate-y-8');
-                    p.querySelector('.vertical-label').classList.add('opacity-0');
-                });
-            });
-        }
-
-        // --- CONSULTATION (GenAI) ---
-        function initConsultation() {
-            const form = document.getElementById('consult-form');
-            const output = document.getElementById('consult-output');
-            
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const formData = {
-                    brand: document.getElementById('brandName').value,
-                    industry: document.getElementById('industry').value,
-                    goal: document.getElementById('goal').value
-                };
-
-                // UI Loading State
-                document.getElementById('consult-empty').classList.add('hidden');
-                document.getElementById('consult-result').classList.add('hidden');
-                document.getElementById('consult-loading').classList.remove('hidden');
-
-                if (!GEMINI_API_KEY) {
-                    alert('API KEY MISSING: Edit the index.html file and add your GEMINI_API_KEY at the top of the script tag.');
-                    document.getElementById('consult-loading').classList.add('hidden');
-                    document.getElementById('consult-empty').classList.remove('hidden');
-                    return;
-                }
-
-                try {
-                    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-                    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" }); // Using newer model
-
-                    const prompt = `
-                        You are the Creative Director of "shownright.", a high-end design agency.
-                        We offer two packages: "Analog Takeover" (High-budget, real footage) and "Neural Hybrid" (AI-integrated, fast).
-                        Client: ${formData.brand} (${formData.industry}). Goal: ${formData.goal}.
-                        Recommend ONE package. Return strictly JSON: { "recommendation": "String", "strategy": "String (Bold 2 sentences)", "rationale": "String" }.
-                    `;
-
-                    const result = await model.generateContent({
-                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    });
-                    
-                    const response = JSON.parse(result.response.text());
-                    
-                    // Render Result
-                    document.getElementById('consult-loading').classList.add('hidden');
-                    document.getElementById('consult-result').classList.remove('hidden');
-                    
-                    document.getElementById('res-rec').textContent = response.recommendation;
-                    document.getElementById('res-rat').textContent = response.rationale;
-                    
-                    // Typewriter effect for strategy
-                    const stratEl = document.getElementById('res-strat');
-                    stratEl.textContent = '';
-                    let i = 0;
-                    const typeInterval = setInterval(() => {
-                        stratEl.textContent += response.strategy.charAt(i);
-                        i++;
-                        if (i >= response.strategy.length) clearInterval(typeInterval);
-                    }, 20);
-
-                } catch (error) {
-                    console.error(error);
-                    alert("Error connecting to Neural Core. Please try again.");
-                    document.getElementById('consult-loading').classList.add('hidden');
-                    document.getElementById('consult-empty').classList.remove('hidden');
-                }
-            });
-        }
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
     </script>
-</body>
+  </body>
 </html>
