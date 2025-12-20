@@ -1,573 +1,88 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>shownright.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-    
-    <!-- Babel Standalone for in-browser JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+import React, { useState } from 'react';
+import { Hero } from './components/Hero';
+import { StickySection } from './components/StickySection';
+import { ServiceInteractive } from './components/ServiceInteractive';
+import { Consultation } from './components/Consultation';
+import { Marquee } from './components/Marquee';
+import { ProjectGallery } from './components/ProjectGallery';
+import { ClientLogos } from './components/ClientLogos';
+import { ContactModal } from './components/ContactModal';
 
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              carbon: '#111111',
-              studio: '#F4F4F4',
-              rec: '#DE352B',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            letterSpacing: {
-              tighter: '-0.04em',
-              tight: '-0.02em',
-              widest: '0.1em',
-            },
-            transitionTimingFunction: {
-              'swiss': 'cubic-bezier(0.23, 1, 0.32, 1)',
-            }
-          }
-        }
-      }
+const App: React.FC = () => {
+  const [isContactOpen, setIsContactOpen] = useState(false);
+
+  return (
+    <div className="w-full min-h-screen bg-studio text-carbon font-sans selection:bg-rec selection:text-white overflow-x-hidden">
       
-      // Polyfill for process.env.API_KEY
-      window.process = {
-        env: {
-          API_KEY: '' 
-        }
-      };
-    </script>
-    <style>
-      body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        background-color: #F4F4F4;
-        color: #111111;
-      }
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
-      ::selection {
-        background-color: #DE352B;
-        color: white;
-      }
+      <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
 
-      /* Glitch Animation */
-      @keyframes glitch-anim {
-        0% { transform: translate(0); }
-        20% { transform: translate(-2px, 2px); }
-        40% { transform: translate(-2px, -2px); }
-        60% { transform: translate(2px, 2px); }
-        80% { transform: translate(2px, -2px); }
-        100% { transform: translate(0); }
-      }
-      .hover-glitch:hover {
-        animation: glitch-anim 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
-        color: #DE352B;
-      }
+      {/* 0.0 Intro */}
+      <Hero />
+      
+      <ClientLogos />
 
-      /* Scanline Effect */
-      .scanlines {
-        background: linear-gradient(
-          to bottom,
-          rgba(255,255,255,0),
-          rgba(255,255,255,0) 50%,
-          rgba(0,0,0,0.2) 50%,
-          rgba(0,0,0,0.2)
-        );
-        background-size: 100% 4px;
-      }
-      .perspective-1000 {
-        perspective: 1000px;
-      }
-      .writing-vertical {
-        writing-mode: vertical-rl;
-      }
-    </style>
-  
-  <!-- FIXED IMPORT MAP: Strictly React 18 to avoid crashes -->
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.263.1",
-    "@google/genai": "https://esm.sh/@google/genai@0.1.1",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
-</head>
-  <body>
-    <div id="root"></div>
+      <div className="py-12">
+        <Marquee text="SELECTED WORKS / RECENT / ARCHIVE /" repeat={5} reverse={true} />
+      </div>
 
-    <script type="text/babel" data-type="module">
-      import React, { useState, useEffect, useRef } from 'react';
-      import ReactDOM from 'react-dom/client';
-      import { ArrowDown, Play, Plus, X, MoveRight, Box, Activity, Globe, Zap, Shield, Cpu, Check, ArrowRight as ArrowRightIcon, Loader2, Sparkles, Terminal, ChevronRight, Aperture } from 'lucide-react';
-      import { GoogleGenAI, Type } from "@google/genai";
-
-      // --- DATA ---
-      const PACKAGES = [
-        {
-          id: 'pkg-01',
-          title: 'Brand Takeover',
-          subtitle: 'Full-Scale Creative & Social Management',
-          description: 'A full reset of your brand’s visual presence and day-to-day content engine. We manage your brand from the ground up — creative direction, production, social strategy, and the full rollout. We rebuild how you look, how you sound, and how you show up online.',
-          features: [
-            'Brand System & Identity Development',
-            'Campaign Strategy & Creative Direction',
-            'Photography, Cover Shoots & Production',
-            'Styling & On-Set Art Direction',
-            'Commercial & Social Video Production',
-            'Social Media Management',
-            'Content Architecture',
-            'Post-Production: Editing, Color, Sound'
-          ],
-          type: 'real',
-          priceRange: '$$$$'
-        },
-        {
-          id: 'pkg-02',
-          title: 'AI SYSTEMS TAKEOVER',
-          subtitle: 'AI-Driven Content & Workflow Integration',
-          description: 'We install a full AI stack into your brand’s creative and operational workflow. From automated content pipelines to custom brand-trained tools, we build systems that make your marketing faster, smarter, and more efficient — without replacing your identity.',
-          features: [
-            'AI Tool Curation & Integration',
-            'AI Brand Voice Training',
-            'AI-Assisted Content Production',
-            'Automated Social Resize Pipelines',
-            'AI-Powered Reporting Dashboards',
-            'Workflow Automation',
-            'Content Distribution Strategy',
-            'Human-Led Quality Control'
-          ],
-          type: 'hybrid',
-          priceRange: '$$'
-        }
-      ];
-
-      const PROJECTS = [
-        { 
-          id: '01', 
-          client: 'GUESS', 
-          title: 'Exclusive Dinner', 
-          type: 'Global TVC', 
-          year: '2025',
-          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-red-suit-34448-large.mp4'
-        },
-        { 
-          id: '02', 
-          client: 'Lacoste', 
-          title: 'Court Legacy', 
-          type: 'Social Series', 
-          year: '2025',
-          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-playing-tennis-34351-large.mp4'
-        },
-        { 
-          id: '06', 
-          client: 'Mag10', 
-          title: 'Luxury Estates', 
-          type: 'Web Experience', 
-          year: '2025',
-          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-architectural-shot-of-a-modern-building-34460-large.mp4'
-        },
-        { 
-          id: '05', 
-          client: 'Fightzumi', 
-          title: 'Combat League', 
-          type: 'Event Coverage', 
-          year: '2024',
-          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-boxer-training-with-a-punching-bag-34453-large.mp4'
-        },
-        { 
-          id: '07', 
-          client: 'GUESS', 
-          title: 'Beach Takeover', 
-          type: 'Summer Campaign', 
-          year: '2024',
-          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-in-swimsuit-walking-on-the-beach-34451-large.mp4'
-        },
-        { 
-          id: '04', 
-          client: 'Al Pago', 
-          title: 'Luxury Estates', 
-          type: 'Drone / AI', 
-          year: '2023',
-          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-luxury-mansion-with-a-pool-34455-large.mp4'
-        },
-      ];
-
-      const CLIENTS = [
-        { id: 'guess', name: 'GUESS', icon: Box },
-        { id: 'lacoste', name: 'LACOSTE', icon: Activity },
-        { id: 'alpago', name: 'AL PAGO', icon: Globe },
-        { id: 'mag10', name: 'MAG10', icon: Zap },
-        { id: 'fightzumi', name: 'FIGHTZUMI', icon: Shield },
-        { id: 'neura', name: 'NEURA', icon: Cpu },
-      ];
-
-      // --- GEMINI AI SERVICE ---
-      const generateBrandStrategy = async (formData) => {
-        const apiKey = process.env.API_KEY || '';
-        if (!apiKey) {
-           console.warn("No API Key found");
-           await new Promise(r => setTimeout(r, 2000));
-           return {
-             recommendation: "System Offline",
-             strategy: "API Key required for real-time analysis. Please configure your environment.",
-             rationale: "Demo mode active."
-           };
-        }
-
-        const ai = new GoogleGenAI({ apiKey });
-        const prompt = `
-          You are the Creative Director of "shownright.", a high-end design agency.
-          Client: ${formData.brandName} (${formData.industry}). Goal: ${formData.goal}.
-          Packages: 1. Analog Takeover (Real footage), 2. Neural Hybrid (AI).
-          Recommend ONE. Return JSON.
-        `;
-
-        try {
-          const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  recommendation: { type: Type.STRING },
-                  strategy: { type: Type.STRING },
-                  rationale: { type: Type.STRING }
-                },
-                required: ["recommendation", "strategy", "rationale"]
-              }
-            }
-          });
-          return JSON.parse(response.text);
-        } catch (error) {
-          console.error("Gemini Error:", error);
-          return {
-            recommendation: "Consultation Required",
-            strategy: "We need to discuss this in person.",
-            rationale: "Automated analysis failed."
-          };
-        }
-      };
-
-      // --- COMPONENTS ---
-
-      const Marquee = ({ text, repeat = 10, reverse = false }) => {
-        return (
-          <div className="relative flex overflow-x-hidden bg-carbon text-studio border-y border-carbon py-4 select-none">
-            <div className={`animate-marquee whitespace-nowrap flex gap-12 ${reverse ? 'flex-row-reverse' : ''}`}>
-              {Array.from({ length: repeat }).map((_, i) => (
-                <span key={i} className="text-xl md:text-2xl font-medium uppercase tracking-widest flex items-center gap-12">
-                  {text} <span className="w-2 h-2 bg-rec rounded-full inline-block"></span>
-                </span>
-              ))}
-            </div>
-             <style>{`
-              .animate-marquee { animation: marquee 40s linear infinite; }
-              @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-            `}</style>
+      {/* 2.0 Work */}
+      <StickySection id="work" number="1.0" title="Work.">
+          <div className="-ml-6 lg:-ml-12 w-[calc(100%+3rem)] lg:w-[calc(100%+6rem)]">
+            <ProjectGallery />
           </div>
-        );
-      };
+      </StickySection>
 
-      const ClientLogos = () => {
-        return (
-          <div className="w-full py-16 border-b border-carbon/10 bg-studio relative overflow-hidden group">
-            <div className="container mx-auto px-6 mb-8 flex justify-between items-center relative z-10">
-              <div className="flex items-center gap-4">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rec"></span>
-                  <h2 className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-400">Trusted Partners</h2>
-              </div>
-              <div className="hidden md:block h-[1px] flex-grow mx-8 bg-carbon/5"></div>
-              <span className="font-mono text-[9px] text-zinc-300 uppercase hidden lg:block">System_Status: Stable</span>
-            </div>
-            <div className="relative flex overflow-hidden">
-              <div className="flex whitespace-nowrap animate-marquee-fast group-hover:[animation-play-state:paused] py-4">
-                {[...CLIENTS, ...CLIENTS, ...CLIENTS].map((client, i) => {
-                  const Icon = client.icon;
-                  return (
-                    <div key={`${client.id}-${i}`} className="flex items-center gap-4 px-12 md:px-20 opacity-40 hover:opacity-100 transition-opacity duration-300">
-                        <Icon size={24} />
-                        <span className="text-3xl md:text-4xl font-black tracking-tighter lowercase">{client.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <style>{`.animate-marquee-fast { animation: marquee-scroll 60s linear infinite; } @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }`}</style>
-          </div>
-        );
-      };
+      {/* 3.0 Services */}
+      <StickySection id="services" number="2.0" title="Services.">
+        <div className="w-full max-w-[1400px] mx-auto">
+             <p className="text-2xl mb-12 lg:mb-24 font-light leading-tight max-w-2xl px-2">
+                Two distinct pathways to visual dominance. <br/>Select your vector.
+            </p>
+            <ServiceInteractive onOpenContact={() => setIsContactOpen(true)} />
+        </div>
+      </StickySection>
 
-      const ProjectGallery = () => {
-        const scrollContainerRef = useRef(null);
-        const [skew, setSkew] = useState(0);
-        const lastScrollX = useRef(0);
-        
-        useEffect(() => {
-          const animate = () => {
-            if (scrollContainerRef.current) {
-              const currentX = scrollContainerRef.current.scrollLeft;
-              const velocity = currentX - lastScrollX.current;
-              setSkew(prev => prev + (velocity * 0.1 - prev) * 0.1);
-              lastScrollX.current = currentX;
-            }
-            requestAnimationFrame(animate);
-          };
-          requestAnimationFrame(animate);
-        }, []);
+      {/* 4.0 Consultation */}
+      <StickySection id="consult" number="3.0" title="Join Us." theme="dark">
+         <div className="mb-24">
+            <p className="text-xl text-zinc-500 max-w-3xl leading-relaxed">
+                Elevate your brand infrastructure. Shownright is synonymous with uncompromising excellence. 
+                Partner with us to architect the trajectory of your next visual era.
+            </p>
+         </div>
+         <Consultation />
+      </StickySection>
 
-        return (
-          <div className="w-full py-12 perspective-1000">
-              <div ref={scrollContainerRef} className="flex overflow-x-auto gap-8 pb-16 scrollbar-hide snap-x snap-mandatory px-4 md:px-0">
-                  {PROJECTS.map((project, index) => (
-                      <div key={project.id} className="min-w-[85vw] md:min-w-[600px] snap-center shrink-0 group cursor-pointer relative" style={{ transform: `skewX(${-skew}deg)` }}>
-                          <div className="w-full aspect-[16/9] bg-zinc-900 relative mb-8 overflow-hidden">
-                              {project.videoUrl && (
-                                  <video src={project.videoUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" autoPlay muted loop playsInline />
-                              )}
-                              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                              <div className="absolute bottom-6 left-6 text-white z-10">
-                                  <h2 className="text-3xl font-black uppercase tracking-tighter">{project.client}</h2>
-                                  <span className="text-xs font-mono opacity-70">{project.type}</span>
-                              </div>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          </div>
-        );
-      };
-
-      const Hero = () => {
-        const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-        const [isVideoOpen, setIsVideoOpen] = useState(false);
-        const containerRef = useRef(null);
-
-        useEffect(() => {
-          const handleMouseMove = (e) => {
-            if (!containerRef.current) return;
-            setMousePos({ 
-              x: (e.clientX / window.innerWidth) * 2 - 1, 
-              y: (e.clientY / window.innerHeight) * 2 - 1 
-            });
-          };
-          window.addEventListener('mousemove', handleMouseMove);
-          return () => window.removeEventListener('mousemove', handleMouseMove);
-        }, []);
-
-        return (
-          <div ref={containerRef} className="relative w-full h-screen bg-studio flex flex-col justify-between overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)`, backgroundSize: `100px 100px` }}></div>
-            
-            <div className="w-full p-6 flex justify-between items-start z-20 fixed top-0">
-              <h1 className="text-xl font-black tracking-tight text-carbon">shownright.</h1>
-              <div className="hidden sm:flex flex-col items-end text-[10px] font-mono opacity-60">
-                 <div className="flex gap-4 uppercase"><span>Dubai</span><span>London</span></div>
-                 <div className="flex items-center gap-2"><span>SYSTEM_ONLINE</span><span className="w-1.5 h-1.5 bg-rec rounded-full animate-pulse"></span></div>
-              </div>
-            </div>
-
-            <div className="flex-grow flex items-center justify-center relative z-10">
-               <div style={{ transform: `translate(${mousePos.x * 10}px, ${mousePos.y * 10}px)` }}>
-                  <h1 className="text-[15vw] leading-[0.8] font-black tracking-tighter text-carbon select-none lowercase text-center">
-                    shown<br /><span className="text-rec">right.</span>
-                  </h1>
-               </div>
-            </div>
-
-            <div className="absolute top-[20%] right-[10%] w-[300px] hidden lg:block hover:scale-105 transition-transform duration-500 cursor-pointer" onClick={() => setIsVideoOpen(true)}>
-               <div className="bg-white p-2 border border-carbon shadow-xl rotate-3">
-                  <div className="aspect-video bg-black relative overflow-hidden">
-                     <video src="https://assets.mixkit.co/videos/preview/mixkit-woman-with-red-neon-lights-22340-large.mp4" className="w-full h-full object-cover opacity-80" autoPlay muted loop />
-                     <div className="absolute inset-0 flex items-center justify-center"><Play className="text-white w-12 h-12" /></div>
-                  </div>
-                  <div className="pt-2 flex justify-between items-center"><span className="text-[10px] font-bold uppercase">Showreel 2025</span><Plus size={12} /></div>
-               </div>
-            </div>
-
-            {isVideoOpen && (
-              <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4" onClick={() => setIsVideoOpen(false)}>
-                 <div className="w-full max-w-6xl aspect-video bg-black relative" onClick={e => e.stopPropagation()}>
-                    <video src="https://assets.mixkit.co/videos/preview/mixkit-woman-with-red-neon-lights-22340-large.mp4" className="w-full h-full object-cover" controls autoPlay />
-                    <button className="absolute top-4 right-4 text-white" onClick={() => setIsVideoOpen(false)}><X size={32} /></button>
-                 </div>
-              </div>
-            )}
-          </div>
-        );
-      };
-
-      const StickySection = ({ number, title, children, id, theme = 'light' }) => {
-        const isDark = theme === 'dark';
-        return (
-          <section id={id} className={`min-h-screen w-full flex flex-col lg:flex-row border-t border-carbon/10 ${isDark ? 'bg-carbon text-studio' : 'bg-studio text-carbon'}`}>
-            <div className="lg:w-[300px] p-6 lg:p-12 lg:sticky lg:top-0 lg:h-screen border-r border-carbon/10 shrink-0">
-              <span className="font-mono text-xs uppercase tracking-widest block mb-4 opacity-50">{number}</span>
-              <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
-            </div>
-            <div className="flex-grow p-6 lg:p-24">{children}</div>
-          </section>
-        );
-      };
-
-      const InteractivePanel = ({ pkg, index, hoveredId, setHoveredId, onOpenContact }) => {
-        const isHovered = hoveredId === pkg.id;
-        const isAnalog = pkg.id === 'pkg-01';
-        
-        return (
-          <div 
-            onMouseEnter={() => setHoveredId(pkg.id)} 
-            onMouseLeave={() => setHoveredId(null)}
-            className={`
-              relative flex flex-col border-b lg:border-r border-carbon/10 transition-all duration-500 overflow-hidden group cursor-pointer
-              ${hoveredId && !isHovered ? 'lg:flex-[1] opacity-50' : 'lg:flex-[3] opacity-100'}
-              ${!hoveredId ? 'lg:flex-1' : ''}
-              ${!isAnalog ? 'bg-[#050505] text-white' : 'bg-studio text-carbon'}
-            `}
-          >
-             <div className="p-8 h-full flex flex-col justify-between relative z-10">
-                <div>
-                   <div className="text-[10px] font-bold mb-4 uppercase tracking-widest opacity-50">0{index+1}</div>
-                   <h3 className="text-3xl font-black uppercase mb-2">{pkg.title}</h3>
-                   <p className="opacity-70 max-w-md">{pkg.description}</p>
+      {/* Footer */}
+      <footer className="bg-white text-carbon py-24 border-t border-zinc-200">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="col-span-1 md:col-span-2">
+                <h2 className="text-2xl font-bold tracking-tight mb-8 lowercase">shownright.</h2>
+                <div className="flex flex-col gap-2 text-zinc-500 text-sm">
+                    <a href="mailto:info@shownrightcreative.com" className="hover:text-rec transition-colors block w-fit">info@shownrightcreative.com</a>
+                    <p>© 2024 Shownright Agency.</p>
+                    <p>Dubai / London / Paris</p>
                 </div>
-                <div className={`mt-8 transition-all duration-500 ${isHovered || !hoveredId ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-                   <button onClick={(e) => {e.stopPropagation(); onOpenContact()}} className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest border-b border-current pb-1">Join Us <ArrowRightIcon size={12} /></button>
-                </div>
-             </div>
-          </div>
-        );
-      };
+            </div>
+            <div>
+                <h4 className="font-bold uppercase tracking-widest mb-6 text-xs">Social</h4>
+                <ul className="space-y-4 text-sm text-zinc-500">
+                    <li className="hover:text-rec cursor-pointer transition-colors">Instagram</li>
+                    <li className="hover:text-rec cursor-pointer transition-colors">Twitter / X</li>
+                    <li className="hover:text-rec cursor-pointer transition-colors">LinkedIn</li>
+                </ul>
+            </div>
+            <div>
+                <h4 className="font-bold uppercase tracking-widest mb-6 text-xs">Legal</h4>
+                <ul className="space-y-4 text-sm text-zinc-500">
+                    <li className="hover:text-rec cursor-pointer transition-colors">Privacy Policy</li>
+                    <li className="hover:text-rec cursor-pointer transition-colors">Terms of Engagement</li>
+                </ul>
+            </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
 
-      const ServiceInteractive = ({ onOpenContact }) => {
-        const [hoveredId, setHoveredId] = useState(null);
-        return (
-          <div className="w-full flex flex-col lg:flex-row h-auto lg:min-h-[600px] border border-carbon/10">
-            {PACKAGES.map((pkg, index) => (
-               <InteractivePanel key={pkg.id} pkg={pkg} index={index} hoveredId={hoveredId} setHoveredId={setHoveredId} onOpenContact={onOpenContact} />
-            ))}
-          </div>
-        );
-      };
-
-      const Consultation = () => {
-        const [formData, setFormData] = useState({ brandName: '', industry: '', goal: '' });
-        const [loading, setLoading] = useState(false);
-        const [result, setResult] = useState(null);
-
-        const handleSubmit = async (e) => {
-          e.preventDefault();
-          setLoading(true);
-          const res = await generateBrandStrategy(formData);
-          setResult(res);
-          setLoading(false);
-        };
-
-        return (
-          <div className="w-full bg-black text-zinc-300 p-8 border border-zinc-800">
-             <div className="flex items-center gap-2 mb-8 opacity-50"><Terminal size={14} /><span className="font-mono text-xs">SR_INTAKE</span></div>
-             <div className="grid lg:grid-cols-2 gap-12">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                   <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-widest text-zinc-500">Brand Identity</label>
-                      <input className="w-full bg-transparent border-b border-zinc-800 py-2 text-xl text-white outline-none focus:border-rec" value={formData.brandName} onChange={e => setFormData({...formData, brandName: e.target.value})} placeholder="Brand Name" />
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-widest text-zinc-500">Sector</label>
-                      <input className="w-full bg-transparent border-b border-zinc-800 py-2 text-xl text-white outline-none focus:border-rec" value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})} placeholder="Industry" />
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-widest text-zinc-500">Objective</label>
-                      <textarea className="w-full bg-zinc-900/50 border border-zinc-800 p-4 text-sm text-white outline-none focus:border-rec resize-none h-32" value={formData.goal} onChange={e => setFormData({...formData, goal: e.target.value})} placeholder="What is the goal?" />
-                   </div>
-                   <button disabled={loading} className="px-8 py-3 bg-white text-black font-bold uppercase text-xs hover:bg-rec hover:text-white transition-colors">
-                      {loading ? 'Processing...' : 'Analyze'}
-                   </button>
-                </form>
-                <div className="border-l border-zinc-800 pl-8 flex flex-col justify-center">
-                   {!result ? (
-                      <div className="opacity-30 flex flex-col items-center"><Sparkles className="mb-4" /> <p className="font-mono text-xs">Awaiting Input Data...</p></div>
-                   ) : (
-                      <div className="animate-in fade-in space-y-6">
-                         <div><span className="text-rec text-[10px] uppercase border border-rec px-2 py-0.5">Recommendation</span><h3 className="text-2xl font-bold text-white mt-2">{result.recommendation}</h3></div>
-                         <p className="text-zinc-400 text-lg leading-relaxed">{result.strategy}</p>
-                         <div className="pt-6 border-t border-zinc-900 text-sm font-mono text-zinc-500">{result.rationale}</div>
-                      </div>
-                   )}
-                </div>
-             </div>
-          </div>
-        );
-      };
-
-      const ContactModal = ({ isOpen, onClose }) => {
-        if (!isOpen) return null;
-        return (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-carbon/90 backdrop-blur" onClick={onClose}></div>
-             <div className="bg-studio w-full max-w-lg p-12 relative shadow-2xl animate-in zoom-in-95">
-                <button onClick={onClose} className="absolute top-4 right-4"><X /></button>
-                <h2 className="text-3xl font-black mb-6 uppercase">Join Us.</h2>
-                <form className="space-y-6">
-                   <input className="w-full border-b border-carbon/20 py-2 bg-transparent outline-none" placeholder="Name" />
-                   <input className="w-full border-b border-carbon/20 py-2 bg-transparent outline-none" placeholder="Email" />
-                   <textarea className="w-full border-b border-carbon/20 py-2 bg-transparent outline-none h-24 resize-none" placeholder="Message" />
-                   <button className="w-full bg-carbon text-white py-4 font-bold uppercase text-xs hover:bg-rec">Transmit</button>
-                </form>
-             </div>
-          </div>
-        );
-      };
-
-      // --- APP ---
-      const App = () => {
-        const [isContactOpen, setIsContactOpen] = useState(false);
-        return (
-          <div className="w-full min-h-screen bg-studio text-carbon font-sans selection:bg-rec selection:text-white">
-            <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
-            <Hero />
-            <ClientLogos />
-            <Marquee text="SELECTED WORKS / RECENT / ARCHIVE /" />
-            <StickySection id="work" number="1.0" title="Work.">
-               <ProjectGallery />
-            </StickySection>
-            <StickySection id="services" number="2.0" title="Services.">
-               <div className="max-w-7xl mx-auto">
-                  <p className="text-2xl font-light mb-12">Two distinct pathways to visual dominance.</p>
-                  <ServiceInteractive onOpenContact={() => setIsContactOpen(true)} />
-               </div>
-            </StickySection>
-            <StickySection id="consult" number="3.0" title="Join Us." theme="dark">
-               <Consultation />
-            </StickySection>
-            <footer className="py-24 px-6 border-t border-carbon/10 bg-white">
-               <h2 className="text-2xl font-bold lowercase mb-4">shownright.</h2>
-               <p className="text-sm text-zinc-500">© 2024. Dubai / London / Paris</p>
-            </footer>
-          </div>
-        );
-      };
-
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<App />);
-    </script>
-  </body>
-</html>
+export default App;
